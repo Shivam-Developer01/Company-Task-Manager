@@ -1,0 +1,110 @@
+.auth-card {
+  width: 100%;
+  max-width: 430px;
+
+  background: white;
+
+  padding: 40px;
+
+  border-radius: 18px;
+
+  box-shadow: var(--shadow);
+}
+
+.auth-card h2 {
+  font-size: 2rem;
+
+  margin-bottom: 10px;
+}
+
+.auth-subtitle {
+  color: var(--text-light);
+
+  margin-bottom: 35px;
+
+  line-height: 1.6;
+}
+
+.input-group {
+  display: flex;
+
+  flex-direction: column;
+
+  margin-bottom: 22px;
+}
+
+.input-group label {
+  margin-bottom: 8px;
+
+  font-weight: 600;
+}
+
+.input-group input {
+  padding: 14px 16px;
+
+  border: 1px solid var(--border);
+
+  border-radius: 10px;
+
+  outline: none;
+
+  transition: 0.3s;
+
+  font-size: 15px;
+}
+
+.input-group input:focus {
+  border-color: var(--primary);
+
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
+}
+
+.auth-btn {
+  width: 100%;
+
+  border: none;
+
+  background: var(--primary);
+
+  color: white;
+
+  padding: 15px;
+
+  border-radius: 10px;
+
+  font-size: 16px;
+
+  margin-top: 10px;
+
+  transition: 0.3s;
+}
+
+.auth-btn:hover {
+  background: var(--primary-dark);
+}
+
+.redirect-text {
+  text-align: center;
+
+  margin-top: 25px;
+
+  color: var(--text-light);
+}
+
+.redirect-text a {
+  color: var(--primary);
+
+  margin-left: 6px;
+
+  font-weight: 600;
+}
+
+.redirect-text a:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 600px) {
+  .auth-card {
+    padding: 30px 24px;
+  }
+}

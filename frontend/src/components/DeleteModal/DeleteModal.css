@@ -1,0 +1,93 @@
+.delete-overlay {
+  position: fixed;
+  inset: 0;
+
+  background: rgba(0, 0, 0, 0.45);
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  padding: 20px;
+
+  z-index: 999;
+}
+
+.delete-modal {
+  background: white;
+
+  width: 100%;
+  max-width: 450px;
+
+  border-radius: 18px;
+
+  padding: 35px;
+
+  text-align: center;
+
+  animation: pop 0.25s ease;
+}
+
+.delete-icon {
+  font-size: 60px;
+
+  margin-bottom: 15px;
+}
+
+.delete-modal h2 {
+  margin-bottom: 15px;
+}
+
+.delete-modal p {
+  color: var(--text-light);
+
+  line-height: 1.7;
+}
+
+.delete-actions {
+  display: flex;
+
+  gap: 15px;
+
+  margin-top: 30px;
+}
+
+.delete-actions button {
+  flex: 1;
+
+  border: none;
+
+  padding: 14px;
+
+  border-radius: 10px;
+
+  font-size: 15px;
+}
+
+.cancel-delete {
+  background: #f3f4f6;
+}
+
+.confirm-delete {
+  background: var(--danger);
+
+  color: white;
+}
+
+.confirm-delete:hover {
+  background: #dc2626;
+}
+
+@keyframes pop {
+  from {
+    transform: scale(0.9);
+
+    opacity: 0;
+  }
+
+  to {
+    transform: scale(1);
+
+    opacity: 1;
+  }
+}
