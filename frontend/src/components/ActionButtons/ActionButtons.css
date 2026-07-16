@@ -1,0 +1,67 @@
+.table-actions {
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  gap: 10px;
+}
+
+.icon-action {
+  width: 36px;
+
+  height: 36px;
+
+  display: flex;
+
+  justify-content: center;
+
+  align-items: center;
+
+  border: none;
+
+  border-radius: 10px;
+
+  background: #f8fafc;
+
+  color: #475569;
+
+  cursor: pointer;
+
+  transition: 0.25s;
+
+  font-size: 16px;
+}
+
+.icon-action:hover {
+  background: #2563eb;
+
+  color: white;
+}
+
+.icon-action.edit:hover {
+  background: #f59e0b;
+}
+
+.icon-action.success:hover {
+  background: #16a34a;
+}
+
+.icon-action.danger:hover {
+  background: #dc2626;
+}
+
+.icon-action:disabled {
+  opacity: 0.5;
+
+  cursor: not-allowed;
+
+  pointer-events: none;
+}
+
+.icon-action.warning:hover {
+  background: #f59e0b;
+
+  color: white;
+}

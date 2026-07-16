@@ -1,0 +1,325 @@
+.task-d-header {
+  display: flex;
+
+  flex-direction: column;
+
+  align-items: center;
+
+  text-align: center;
+
+  padding-bottom: 24px;
+
+  border-bottom: 1px solid #e2e8f0;
+
+  margin-bottom: 24px;
+}
+.task-d-avatar {
+  width: 70px;
+
+  height: 70px;
+
+  border-radius: 50%;
+
+  background: #2563eb;
+
+  color: white;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  font-size: 28px;
+
+  font-weight: 700;
+
+  margin-bottom: 16px;
+}
+
+.task-d-header h2 {
+  margin: 0;
+
+  font-size: 24px;
+
+  color: #0f172a;
+}
+
+.task-d-section {
+  margin-bottom: 28px;
+}
+.task-d-section h4 {
+  margin-bottom: 14px;
+
+  font-size: 15px;
+
+  font-weight: 700;
+
+  color: #1e293b;
+}
+.task-d-section p {
+  margin: 0;
+
+  line-height: 1.7;
+
+  color: #475569;
+}
+.task-info-d-grid {
+  display: grid;
+
+  grid-template-columns: 1fr 1fr;
+
+  gap: 18px;
+}
+.task-info-d-grid div {
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 6px;
+}
+.task-info-d-grid label {
+  font-size: 12px;
+
+  font-weight: 700;
+
+  text-transform: uppercase;
+
+  color: #94a3b8;
+}
+.task-info-d-grid span {
+  font-size: 14px;
+
+  font-weight: 600;
+
+  color: #334155;
+}
+.priority-d-chip {
+  margin-top: 14px;
+
+  padding: 8px 16px;
+
+  border-radius: 999px;
+
+  font-size: 13px;
+
+  font-weight: 700;
+}
+.priority-d-chip.low {
+  background: #ecfdf5;
+
+  color: #047857;
+}
+.priority-d-chip.medium {
+  background: #eff6ff;
+
+  color: #2563eb;
+}
+.priority-d-chip.high {
+  background: #fff7ed;
+
+  color: #ea580c;
+}
+.priority-d-chip.critical {
+  background: #fef2f2;
+
+  color: #dc2626;
+}
+
+.task-d-checklist {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.checklist-d-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  margin-bottom: 10px;
+  padding: 12px 14px;
+
+  background: #f8fafc;
+
+  border: 1px solid #e2e8f0;
+
+  border-radius: 10px;
+}
+
+.check-d-icon {
+  width: 24px;
+  height: 24px;
+
+  border-radius: 50%;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: #e2e8f0;
+
+  font-size: 13px;
+
+  flex-shrink: 0;
+}
+
+.checklist-d-row.completed .check-d-icon {
+  background: #22c55e;
+  color: white;
+}
+
+.checklist-d-row.completed span:last-child {
+  text-decoration: line-through;
+  color: #64748b;
+}
+
+.attachment-d-card {
+  display: flex;
+
+  justify-content: space-between;
+
+  align-items: center;
+
+  padding: 14px;
+
+  border: 1px solid #e2e8f0;
+
+  border-radius: 10px;
+
+  background: white;
+
+  margin-bottom: 10px;
+
+  text-decoration: none;
+
+  color: inherit;
+
+  transition: 0.2s;
+}
+.attachment-d-card:hover {
+  border-color: #2563eb;
+
+  background: #eff6ff;
+}
+.attachment-d-card div {
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 4px;
+}
+.attachment-d-card small {
+  color: #64748b;
+
+  font-size: 12px;
+}
+.empty-d-text {
+  padding: 18px;
+
+  text-align: center;
+
+  border: 1px dashed #cbd5e1;
+
+  border-radius: 10px;
+
+  color: #64748b;
+
+  background: #f8fafc;
+}
+.activity-d-timeline {
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 18px;
+
+  position: relative;
+}
+.timeline-d-item {
+  display: flex;
+
+  gap: 16px;
+
+  align-items: flex-start;
+}
+.timeline-d-dot {
+  width: 12px;
+
+  height: 12px;
+
+  border-radius: 50%;
+
+  background: #2563eb;
+
+  margin-top: 6px;
+
+  flex-shrink: 0;
+}
+.timeline-d-content {
+  flex: 1;
+
+  padding-bottom: 18px;
+
+  border-left: 2px solid #e2e8f0;
+
+  padding-left: 18px;
+
+  margin-left: -7px;
+}
+.timeline-d-content strong {
+  display: block;
+
+  margin-bottom: 6px;
+
+  font-size: 14px;
+
+  color: #0f172a;
+}
+.timeline-d-content p {
+  margin: 0 0 6px;
+
+  font-size: 14px;
+
+  color: #475569;
+}
+.timeline-d-content small {
+  color: #94a3b8;
+
+  font-size: 12px;
+}
+.task-d-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 32px;
+}
+
+.task-d-actions .drawer-d-btn {
+  width: 100%;
+}
+
+.task-info-banner {
+  margin-bottom: 18px;
+  padding: 14px 16px;
+
+  border-radius: 10px;
+
+  background: #eff6ff;
+
+  border-left: 4px solid #2563eb;
+
+  color: #1e3a8a;
+}
+
+.task-info-banner strong {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 15px;
+}
+
+.task-info-banner p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+}

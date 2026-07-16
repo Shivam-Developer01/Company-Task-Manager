@@ -1,0 +1,24 @@
+.due-badge.today{
+    background:#fef3c7;
+    color:#b45309;
+}
+
+.due-badge.tomorrow{
+    background:#dbeafe;
+    color:#2563eb;
+}
+
+.due-badge.upcoming{
+    background:#ecfdf5;
+    color:#059669;
+}
+
+.due-badge.overdue{
+    background:#fef2f2;
+    color:#dc2626;
+}
+
+.due-badge.future{
+    background:#f3f4f6;
+    color:#4b5563;
+}

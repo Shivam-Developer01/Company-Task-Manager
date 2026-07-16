@@ -2,6 +2,9 @@ require("dotenv").config();
 
 const express = require("express");
 const cors = require("cors");
+const path = require("path");
+const helmet = require("helmet");
+const compression = require("compression");
 
 const connectDB = require("./db/connect");
 
@@ -9,22 +12,44 @@ const taskRoutes = require("./routes/taskRoutes");
 
 const authRoutes = require("./routes/authRoutes");
 
+const projectRoutes = require("./routes/projectRoutes");
+
+const submissionRoutes = require("./routes/submissionRoutes");
+
+const dashboardRoutes = require("./routes/dashboardRoutes");
+
+const notificationRoutes = require("./routes/notificationRoutes");
+
 const errorHandler = require("./middleware/errorHandler");
 
 const app = express();
+
+app.use(express.json());
+
+app.use(helmet());
+
+app.use(compression());
 
 app.use(
   cors({
     origin: "http://localhost:5173",
     credentials: true,
-  }),
+  })
 );
 
-app.use(express.json());
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 app.use("/api/auth", authRoutes);
 
 app.use("/api/tasks", taskRoutes);
+
+app.use("/api/projects", projectRoutes);
+
+app.use("/api/submissions", submissionRoutes);
+
+app.use("/api/dashboard", dashboardRoutes);
+
+app.use("/api/notifications", notificationRoutes);
 
 app.use(errorHandler);
 

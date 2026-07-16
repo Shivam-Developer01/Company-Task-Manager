@@ -1,0 +1,178 @@
+.table-wrapper {
+  background: white;
+
+  border-radius: 16px;
+
+  overflow-x: auto;
+
+  overflow-y: visible;
+
+  box-shadow: 0 6px 20px rgba(15, 23, 42, 0.06);
+}
+
+.data-table {
+  width: 100%;
+
+  border-collapse: collapse;
+}
+
+.data-table thead {
+  background: #f8fafc;
+
+  position: sticky;
+
+  top: 0;
+
+  z-index: 20;
+}
+
+.data-table th {
+  padding: 16px;
+
+  text-align: center;
+
+  font-size: 14px;
+
+  font-weight: 600;
+
+  color: #475569;
+
+  border-bottom: 1px solid #e2e8f0;
+
+  white-space: nowrap;
+
+  background: #f8fafc;
+
+  position: relative;
+
+  top: 0;
+}
+
+.data-table td {
+  padding: 16px;
+
+  border-bottom: 1px solid #edf2f7;
+
+  font-size: 14px;
+
+  color: #334155;
+}
+
+.data-table tbody tr {
+  transition: 0.2s;
+}
+
+.data-table tbody tr:hover {
+  background: #eef6ff;
+
+  transform: scale(1.003);
+}
+
+.empty-cell {
+  padding: 60px;
+}
+
+.empty-state {
+  display: flex;
+
+  flex-direction: column;
+
+  align-items: center;
+
+  gap: 14px;
+}
+
+.empty-icon {
+  font-size: 56px;
+}
+
+.empty-state h3 {
+  margin: 0;
+
+  font-size: 22px;
+
+  color: #0f172a;
+}
+
+.empty-state p {
+  margin: 0;
+
+  color: #64748b;
+}
+
+.skeleton-cell {
+  height: 16px;
+
+  width: 100%;
+
+  border-radius: 8px;
+
+  background: linear-gradient(90deg, #edf2f7 25%, #f8fafc 50%, #edf2f7 75%);
+
+  background-size: 200% 100%;
+
+  animation: skeleton-loading 1.3s infinite;
+}
+
+.sortable {
+  cursor: pointer;
+
+  user-select: none;
+
+  transition: 0.25s;
+}
+
+.sortable:hover {
+  color: #2563eb;
+}
+
+.sort-arrow {
+  margin-left: 8px;
+
+  font-size: 11px;
+}
+
+@keyframes skeleton-loading {
+  0% {
+    background-position: 200% 0;
+  }
+
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+@media (min-width: 992px) {
+  .data-table {
+    min-width: 100%;
+  }
+}
+
+@media (max-width: 991px) {
+  .data-table {
+    min-width: 900px;
+  }
+}
+
+/* Sticky Actions Column */
+
+@media (min-width: 992px) {
+  .data-table th:last-child,
+  .data-table td:last-child {
+    position: sticky;
+
+    right: 0;
+
+    background: white;
+
+    z-index: 15;
+
+    box-shadow: -4px 0 8px rgba(15, 23, 42, 0.05);
+  }
+
+  .data-table th:last-child {
+    background: #f8fafc;
+
+    z-index: 25;
+  }
+}

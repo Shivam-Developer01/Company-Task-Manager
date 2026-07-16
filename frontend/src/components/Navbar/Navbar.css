@@ -1,119 +1,209 @@
 .navbar {
-    background: var(--card);
-    box-shadow: var(--shadow);
+  height: 90px;
+  background: white;
 
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 
-    padding: 18px 40px;
+  padding: 0 30px;
+
+  border-bottom: 1px solid #e5e7eb;
 }
 
-.logo {
-    display: flex;
-    align-items: center;
-    gap: 14px;
+.page-heading {
+  display: flex;
+  flex-direction: column;
 }
 
-.logo-icon {
-    width: 50px;
-    height: 50px;
-
-    background: var(--primary);
-    color: white;
-
-    border-radius: 12px;
-
-    display: flex;
-    justify-content: center;
-    align-items: center;
-
-    font-size: 24px;
-    font-weight: bold;
+.page-heading h2 {
+  margin: 0;
+  padding-top: 2px;
+  font-size: 24px;
+  font-weight: 700;
+  color: #1e293b;
 }
 
-.logo h2 {
-    font-size: 1.3rem;
-}
-
-.logo span {
-    color: var(--text-light);
-    font-size: .85rem;
+.page-heading p {
+  margin-top: 4px;
+  font-size: 13px;
+  color: #64748b;
 }
 
 .navbar-right {
-    display: flex;
-    align-items: center;
-    gap: 20px;
+  display: flex;
+  align-items: center;
+  gap: 18px;
 }
 
-.user-info {
-    display: flex;
-    align-items: center;
-    gap: 12px;
+.notification-btn {
+  width: 42px;
+  height: 42px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border: none;
+
+  border-radius: 50%;
+
+  background: #f1f5f9;
+
+  cursor: pointer;
+
+  font-size: 18px;
+
+  transition: 0.25s;
 }
 
-.avatar {
-    width: 45px;
-    height: 45px;
+.menu-btn {
+  display: flex;
 
-    border-radius: 50%;
+  align-items: center;
 
-    background: var(--primary);
+  justify-content: center;
 
-    color: white;
+  width: 42px;
 
-    display: flex;
-    justify-content: center;
-    align-items: center;
+  height: 42px;
 
-    font-weight: 600;
+  border: none;
+
+  border-radius: 10px;
+
+  background: #f1f5f9;
+
+  cursor: pointer;
+
+  font-size: 22px;
+
+  transition: 0.25s;
 }
 
-.user-info h4 {
-    font-size: .95rem;
+.menu-btn:hover {
+  background: #e2e8f0;
 }
 
-.user-info p {
-    color: var(--text-light);
-    font-size: .8rem;
+.user-box {
+  display: flex;
+  align-items: center;
 }
 
+.user-details {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.user-details h4 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.user-details span {
+  margin-top: 2px;
+  font-size: 13px;
+  color: #64748b;
+  text-transform: capitalize;
+}
 .logout-btn {
+  padding: 10px 18px;
 
-    border: none;
+  border: none;
 
-    background: #ef4444;
+  border-radius: 8px;
 
-    color: white;
+  background: #ef4444;
 
-    padding: 10px 18px;
+  color: white;
 
-    border-radius: 8px;
+  font-weight: 500;
 
-    transition: .3s;
+  cursor: pointer;
+
+  transition: 0.25s;
 }
 
 .logout-btn:hover {
-    background: #dc2626;
+  background: #dc2626;
 }
 
-@media (max-width:768px) {
+.notification-btn {
+  position: relative;
 
-    .navbar {
+  width: 42px;
+  height: 42px;
 
-        padding: 18px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 
-        flex-direction: column;
+  border: none;
 
-        gap: 20px;
-    }
+  border-radius: 50%;
 
-    .navbar-right {
+  background: #f1f5f9;
 
-        width: 100%;
+  cursor: pointer;
 
-        justify-content: space-between;
-    }
+  font-size: 18px;
 
+  transition: all 0.25s ease;
+}
+
+.notification-btn:hover {
+  background: #2563eb;
+  color: white;
+
+  transform: translateY(-2px);
+}
+
+.notification-badge {
+  position: absolute;
+
+  top: -4px;
+  right: -4px;
+
+  min-width: 20px;
+  height: 20px;
+
+  padding: 0 6px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 999px;
+
+  background: #ef4444;
+  color: white;
+
+  font-size: 11px;
+  font-weight: 700;
+
+  border: 2px solid white;
+
+  line-height: 1;
+}
+
+
+@media (max-width: 768px) {
+  .navbar {
+    padding: 0 16px;
+  }
+
+  .navbar-left h2 {
+    font-size: 18px;
+  }
+
+  .page-heading p {
+    display: none;
+  }
+
+  .user-box {
+    display: none;
+  }
 }

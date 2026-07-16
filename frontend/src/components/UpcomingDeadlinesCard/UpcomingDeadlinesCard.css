@@ -1,0 +1,68 @@
+.deadline-list {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.deadline-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+
+  padding: 18px 20px;
+
+  background: #f8fafc;
+
+  border: 1px solid #eef2f7;
+
+  border-radius: 14px;
+
+  transition: 0.25s;
+}
+
+.deadline-item:hover {
+  background: #f1f5f9;
+}
+
+.deadline-content h4 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.deadline-content p {
+  margin-top: 6px;
+  font-size: 14px;
+  color: #64748b;
+}
+
+.deadline-item .due-badge {
+  flex-shrink: 0;
+}
+
+.deadline-status {
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.deadline-status.overdue {
+  color: #dc2626;
+}
+
+.deadline-status.today {
+  color: #d97706;
+}
+
+.deadline-status.tomorrow {
+  color: #ca8a04;
+}
+
+.deadline-status.upcoming {
+  color: #059669;
+}
+
+.deadline-status.future {
+  color: #64748b;
+}

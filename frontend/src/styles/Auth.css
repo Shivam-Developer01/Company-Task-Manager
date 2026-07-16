@@ -116,3 +116,36 @@
 .input-error:focus {
   box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.12) !important;
 }
+
+.password-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.password-wrapper input {
+  width: 100%;
+  padding-right: 48px;
+}
+
+.password-toggle {
+  position: absolute;
+  right: 14px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border: none;
+  background: transparent;
+
+  cursor: pointer;
+
+  color: #6b7280;
+
+  font-size: 20px;
+}
+
+.password-toggle:hover {
+  color: #2563eb;
+}

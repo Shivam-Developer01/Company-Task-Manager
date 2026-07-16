@@ -1,0 +1,87 @@
+.drawer-overlay {
+  position: fixed;
+
+  inset: 0;
+
+  background: rgba(15, 23, 42, 0.35);
+
+  opacity: 0;
+
+  visibility: hidden;
+
+  transition: 0.25s;
+
+  z-index: 999;
+}
+
+.drawer-overlay.show {
+  opacity: 1;
+
+  visibility: visible;
+}
+
+.side-drawer {
+  position: fixed;
+
+  top: 0;
+
+  right: -500px;
+
+  width: 450px;
+
+  max-width: 100%;
+
+  height: 100vh;
+
+  background: white;
+
+  transition: 0.3s;
+
+  z-index: 1000;
+
+  display: flex;
+
+  flex-direction: column;
+
+  box-shadow: -10px 0 30px rgba(0, 0, 0, 0.1);
+}
+
+.side-drawer.open {
+  right: 0;
+}
+
+.drawer-header {
+  display: flex;
+
+  justify-content: space-between;
+
+  align-items: center;
+
+  padding: 22px;
+
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.drawer-header h2 {
+  margin: 0;
+
+  font-size: 22px;
+}
+
+.drawer-close {
+  border: none;
+
+  background: none;
+
+  font-size: 24px;
+
+  cursor: pointer;
+}
+
+.drawer-content {
+  padding: 24px;
+
+  overflow: auto;
+
+  flex: 1;
+}

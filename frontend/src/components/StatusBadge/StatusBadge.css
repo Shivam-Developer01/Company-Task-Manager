@@ -1,0 +1,99 @@
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 6px 12px;
+
+  border-radius: 20px;
+
+  font-size: 13px;
+  font-weight: 600;
+
+  white-space: nowrap;
+}
+
+/* Employee */
+
+.status-badge.active {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.status-badge.inactive {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+/* Project */
+
+.status-badge.archived {
+  background: #e5e7eb;
+  color: #374151;
+}
+
+/* Task */
+
+.status-badge.assigned {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.status-badge.accepted {
+  background: #ede9fe;
+  color: #6d28d9;
+}
+
+.status-badge.in_progress {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.status-badge.submitted {
+  background: #d1fae5;
+  color: #047857;
+}
+
+.status-badge.closed {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.status-badge.withdrawn {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.status-badge.assignment_rejected {
+  background: #ffe4e6;
+  color: #be123c;
+}
+
+/* Submission */
+
+.status-badge.pending_review {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.status-badge.approved {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.status-badge.rejected {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+/* Notification */
+
+.status-badge.read {
+  background: #e2e8f0;
+  color: #334155;
+}
+
+.status-badge.unread {
+  background: #dbeafe;
+  color: #1d4ed8;
+}

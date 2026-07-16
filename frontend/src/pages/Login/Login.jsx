@@ -1,13 +1,18 @@
-import { Link } from "react-router-dom";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import AuthLayout from "../../layouts/AuthLayout/AuthLayout";
 import "../../styles/Auth.css";
+import { useNotification } from "../../context/NotificationContext";
 import useForm from "../../hooks/useForm";
 import authService from "../../services/authService";
+import { FiEye, FiEyeOff } from "react-icons/fi";
 
 function Login() {
   const navigate = useNavigate();
+  const { refreshUnreadCount } = useNotification();
+
+  const [apiError, setApiError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
   const { formData, handleChange, resetForm } = useForm({
     email: "",
@@ -15,7 +20,6 @@ function Login() {
   });
 
   const [errors, setErrors] = useState({});
-  const [apiError, setApiError] = useState("");
 
   const validateForm = () => {
     const newErrors = {};
@@ -49,18 +53,29 @@ function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    setApiError("");
+
     if (!validateForm()) return;
 
     try {
       const response = await authService.login(formData);
 
-      localStorage.setItem("token", response.token);
+      localStorage.setItem("accessToken", response.accessToken);
+
+      localStorage.setItem("refreshToken", response.refreshToken);
+
       localStorage.setItem("user", JSON.stringify(response.user));
+      
+      await refreshUnreadCount();
 
       resetForm();
       setErrors({});
 
-      navigate("/dashboard");
+      if (response.user.role === "manager") {
+        navigate("/dashboard");
+      } else {
+        navigate("/employee/dashboard");
+      }
     } catch (error) {
       setApiError(error.response?.data?.message || "Login failed.");
     }
@@ -72,7 +87,7 @@ function Login() {
         <h2>Welcome Back</h2>
 
         <p className="auth-subtitle">
-          Sign in to continue managing your tasks.
+          Sign in to continue to Company Task Management System.
         </p>
 
         <form onSubmit={handleSubmit}>
@@ -97,18 +112,29 @@ function Login() {
           <div className="input-group">
             <label>Password</label>
 
-            <input
-              type="password"
-              name="password"
-              autoComplete="current-password"
-              placeholder="Enter your password"
-              value={formData.password}
-              onChange={(e) => {
-                handleChange(e);
-                clearFieldError(e.target.name);
-              }}
-              className={errors.password ? "input-error" : ""}
-            />
+            <div className="password-wrapper">
+              <input
+                type={showPassword ? "text" : "password"}
+                name="password"
+                autoComplete="current-password"
+                placeholder="Enter your password"
+                value={formData.password}
+                onChange={(e) => {
+                  handleChange(e);
+                  clearFieldError(e.target.name);
+                }}
+                className={errors.password ? "input-error" : ""}
+              />
+
+              <button
+                type="button"
+                className="password-toggle"
+                onClick={() => setShowPassword(!showPassword)}
+              >
+                {showPassword ? <FiEyeOff /> : <FiEye />}
+              </button>
+            </div>
+
             {errors.password && (
               <span className="error-text">{errors.password}</span>
             )}
@@ -120,11 +146,6 @@ function Login() {
             Login
           </button>
         </form>
-
-        <p className="redirect-text">
-          Don't have an account?
-          <Link to="/register">Register</Link>
-        </p>
       </div>
     </AuthLayout>
   );

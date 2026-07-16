@@ -1,0 +1,44 @@
+.review-list {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.review-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+
+  padding: 18px 20px;
+
+  background: #f8fafc;
+
+  border: 1px solid #eef2f7;
+
+  border-radius: 14px;
+
+  transition: 0.25s;
+}
+
+.review-item:hover {
+  background: #f1f5f9;
+}
+
+.review-content h4 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.review-content p {
+  margin-top: 6px;
+  font-size: 14px;
+  color: #64748b;
+}
+
+.review-time {
+  color: #94a3b8;
+  font-size: 14px;
+  white-space: nowrap;
+}

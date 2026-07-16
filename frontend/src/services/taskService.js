@@ -1,23 +1,104 @@
 import api from "../utils/axios";
 
 const taskService = {
-  getTasks: async () => {
-    const response = await api.get("/tasks");
+  getTasks: async (params = {}) => {
+    const response = await api.get("/tasks", {
+      params,
+    });
+
     return response.data;
   },
 
-  createTask: async (taskData) => {
-    const response = await api.post("/tasks", taskData);
+  getTask: async (id) => {
+    const response = await api.get(`/tasks/${id}`);
+
     return response.data;
   },
 
-  updateTask: async (id, taskData) => {
-    const response = await api.patch(`/tasks/${id}`, taskData);
+  getTaskActivities: async (id) => {
+    const response = await api.get(`/tasks/${id}/activities`);
     return response.data;
   },
 
-  deleteTask: async (id) => {
-    const response = await api.delete(`/tasks/${id}`);
+  createTask: async (formData) => {
+    const response = await api.post("/tasks", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+
+    return response.data;
+  },
+
+  updateTask: async (id, formData) => {
+    const response = await api.patch(`/tasks/${id}`, formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+
+    return response.data;
+  },
+
+  toggleArchive: async (id) => {
+    const response = await api.patch(`/tasks/${id}/archive`);
+
+    return response.data;
+  },
+
+  getActivities: async (id) => {
+    const response = await api.get(`/tasks/${id}/activities`);
+
+    return response.data;
+  },
+
+  withdrawTask: async (id) => {
+    const response = await api.patch(`/tasks/${id}/withdraw`);
+    return response.data;
+  },
+
+  archiveTask: async (id) => {
+    const response = await api.patch(`/tasks/${id}/archive`);
+    return response.data;
+  },
+
+  reassignTask: async (id, assignedTo) => {
+    const response = await api.patch(`/tasks/${id}/reassign`, {
+      assignedTo,
+    });
+
+    return response.data;
+  },
+  getMyTasks: async (params = {}) => {
+    const response = await api.get("/tasks/my", {
+      params,
+    });
+
+    return response.data;
+  },
+
+  acceptTask: async (id) => {
+    const response = await api.patch(`/tasks/${id}/accept`);
+    return response.data;
+  },
+
+  rejectTask: async (id, rejectionReason) => {
+    const response = await api.patch(`/tasks/${id}/reject`, {
+      rejectionReason,
+    });
+    return response.data;
+  },
+
+  startTask: async (id) => {
+    const response = await api.patch(`/tasks/${id}/start`);
+    return response.data;
+  },
+
+  updateChecklist: async (taskId, checklistId) => {
+    const response = await api.patch(
+      `/tasks/${taskId}/checklist/${checklistId}`,
+    );
+
     return response.data;
   },
 };
