@@ -11,6 +11,7 @@ function TaskModal({
   employees = [],
   projects = [],
   loading = false,
+  defaultProject = null,
 }) {
   const [formData, setFormData] = useState({
     title: "",
@@ -42,17 +43,27 @@ function TaskModal({
         title: "",
         description: "",
         assignedTo: "",
-        project: "",
+        project: defaultProject?._id || "",
         priority: "Medium",
         dueDate: "",
         checklist: [],
         referenceAttachments: [],
       });
     }
-  }, [task, isOpen]);
+  }, [task, isOpen, defaultProject]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+
+    if (name === "project") {
+      setFormData((prev) => ({
+        ...prev,
+        project: value,
+        assignedTo: "",
+      }));
+
+      return;
+    }
 
     setFormData((prev) => ({
       ...prev,
@@ -97,6 +108,21 @@ function TaskModal({
 
   const isEditable = !task || editableStatuses.includes(task.status);
 
+  const selectedProject = projects.find(
+    (project) => project._id === formData.project,
+  );
+
+  const availableEmployees =
+    selectedProject && selectedProject.members?.length
+      ? employees.filter((employee) =>
+          selectedProject.members.some((member) => {
+            const memberId = typeof member === "string" ? member : member._id;
+
+            return memberId === employee._id;
+          }),
+        )
+      : employees;
+
   return (
     <FormModal
       isOpen={isOpen}
@@ -110,7 +136,7 @@ function TaskModal({
             This task has been <b>{task.status}</b> and can no longer be edited.
           </div>
         )}
-        
+
         {/* ===========================
               BASIC INFORMATION
         =========================== */}
@@ -161,10 +187,11 @@ function TaskModal({
                 value={formData.assignedTo}
                 onChange={handleChange}
                 required
+                disabled={!!task}
               >
                 <option value="">Select Employee</option>
 
-                {employees.map((employee) => (
+                {availableEmployees.map((employee) => (
                   <option key={employee._id} value={employee._id}>
                     {employee.name}
                   </option>
@@ -179,6 +206,7 @@ function TaskModal({
                 name="project"
                 value={formData.project}
                 onChange={handleChange}
+                disabled={!!task || !!defaultProject}
               >
                 <option value="">No Project</option>
 

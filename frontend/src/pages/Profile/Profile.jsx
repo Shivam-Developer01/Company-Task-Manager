@@ -43,7 +43,13 @@ function Profile() {
     }
   }, [profile]);
 
-  if (loading) return <Loader />;
+  if (loading) {
+    return <Loader />;
+  }
+
+  if (!profile) {
+    return null;
+  }
 
   const initials = profile.name
     .split(" ")
@@ -109,13 +115,21 @@ function Profile() {
           <div className="profile-item">
             <label>Department</label>
 
-            <span>{profile.department || "-"}</span>
+            <span>
+              {profile.department
+                ? `${profile.department.name} (${profile.department.code})`
+                : "-"}
+            </span>
           </div>
 
           <div className="profile-item">
             <label>Designation</label>
 
-            <span>{profile.designation || "-"}</span>
+            <span>
+              {profile.designation
+                ? `${profile.designation.name} (${profile.designation.code})`
+                : "-"}
+            </span>
           </div>
 
           <div className="profile-item">
@@ -127,11 +141,13 @@ function Profile() {
           <div className="profile-item">
             <label>Joined On</label>
 
-            {new Date(profile.createdAt).toLocaleDateString("en-IN", {
-              day: "numeric",
-              month: "long",
-              year: "numeric",
-            })}
+            <span>
+              {new Date(profile.createdAt).toLocaleDateString("en-IN", {
+                day: "numeric",
+                month: "long",
+                year: "numeric",
+              })}
+            </span>
           </div>
         </div>
       </div>

@@ -6,6 +6,8 @@ import { FiEye, FiEdit2, FiArchive } from "react-icons/fi";
 
 import { toast } from "react-toastify";
 
+import { useNavigate } from "react-router-dom";
+
 import useDebounce from "../../hooks/useDebounce";
 
 import taskService from "../../services/taskService";
@@ -26,6 +28,16 @@ import "./Tasks.css";
 
 function Tasks() {
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
+
+  const source = searchParams.get("source");
+  const action = searchParams.get("action");
+  const projectId = searchParams.get("project");
+  const taskId = searchParams.get("task");
+
+  const initialProject = searchParams.get("project") || "";
+
+  const [defaultProject, setDefaultProject] = useState(null);
 
   const [tasks, setTasks] = useState([]);
 
@@ -38,6 +50,8 @@ function Tasks() {
   const [status, setStatus] = useState("");
 
   const [priority, setPriority] = useState("");
+
+  const [project, setProject] = useState("");
 
   const [page, setPage] = useState(1);
 
@@ -82,6 +96,16 @@ function Tasks() {
     }
   }, []);
 
+  const handleManageMembersFromTask = () => {
+    if (!selectedTask?.project?._id) return;
+
+    setReassignOpen(false);
+
+    navigate(
+      `/projects?action=members&project=${selectedTask.project._id}&returnTask=${selectedTask._id}`,
+    );
+  };
+
   const fetchTasks = async () => {
     try {
       setLoading(true);
@@ -90,6 +114,7 @@ function Tasks() {
         page,
         search: debouncedSearch,
         priority,
+        project,
         isArchived: archived,
       };
 
@@ -118,17 +143,27 @@ function Tasks() {
 
   useEffect(() => {
     const taskId = searchParams.get("task");
+    const action = searchParams.get("action");
 
     if (!taskId || tasks.length === 0) return;
 
     const task = tasks.find((t) => t._id === taskId);
 
-    if (task) {
-      handleView(task);
+    if (!task) return;
 
-      searchParams.delete("task");
-      setSearchParams(searchParams, { replace: true });
+    handleView(task);
+
+    if (action === "reassign") {
+      setSelectedTask(task);
+      setReassignOpen(true);
     }
+
+    const params = new URLSearchParams(searchParams);
+
+    params.delete("task");
+    params.delete("action");
+
+    setSearchParams(params, { replace: true });
   }, [tasks]);
 
   const fetchEmployees = async () => {
@@ -156,6 +191,34 @@ function Tasks() {
       toast.error("Failed to load projects.");
     }
   };
+
+  useEffect(() => {
+    const action = searchParams.get("action");
+    const projectId = searchParams.get("project");
+
+    if (action !== "create" || !projectId || projects.length === 0) {
+      return;
+    }
+
+    const project = projects.find((p) => p._id === projectId);
+
+    if (!project) return;
+
+    setEditingTask(null);
+
+    setDefaultProject(project);
+
+    setModalOpen(true);
+
+    const params = new URLSearchParams(searchParams);
+
+    params.delete("action");
+    params.delete("source");
+
+    // Keep project so the filter remains applied
+
+    setSearchParams(params, { replace: true });
+  }, [projects]);
 
   const createTask = async (formData) => {
     try {
@@ -250,18 +313,32 @@ function Tasks() {
 
   useEffect(() => {
     fetchTasks();
-  }, [page, debouncedSearch, status, priority]);
+  }, [page, debouncedSearch, status, priority, project]);
 
   useEffect(() => {
     fetchEmployees();
     fetchProjects();
   }, []);
 
+  useEffect(() => {
+    if (source === "project" && initialProject) {
+      setProject(initialProject);
+    }
+  }, [source, initialProject]);
+
+  useEffect(() => {
+    if (!initialProject) {
+      setProject("");
+    }
+  }, [initialProject]);
+
   /* ===========================
           PLACEHOLDER ACTIONS
      =========================== */
 
   const handleEdit = useCallback((task) => {
+    setDefaultProject(null);
+
     setEditingTask(task);
 
     setModalOpen(true);
@@ -482,10 +559,29 @@ function Tasks() {
             <option value="Critical">Critical</option>
           </select>
 
+          <select
+            className="employee-filter"
+            value={project}
+            onChange={(e) => {
+              setPage(1);
+              setProject(e.target.value);
+            }}
+          >
+            <option value="">All Projects</option>
+
+            {projects.map((p) => (
+              <option key={p._id} value={p._id}>
+                {p.name}
+              </option>
+            ))}
+          </select>
+
           <button
             className="add-employee-btn"
             onClick={() => {
               setEditingTask(null);
+
+              setDefaultProject(null);
 
               setModalOpen(true);
             }}
@@ -513,10 +609,12 @@ function Tasks() {
         task={editingTask}
         employees={employees}
         projects={projects}
+        defaultProject={defaultProject}
         loading={modalLoading}
         onClose={() => {
           setModalOpen(false);
           setEditingTask(null);
+          setDefaultProject(null);
         }}
         onSubmit={editingTask ? updateTask : createTask}
       />
@@ -548,9 +646,11 @@ function Tasks() {
         isOpen={reassignOpen}
         task={selectedTask}
         employees={employees}
+        projects={projects}
         loading={actionLoading}
         onClose={() => setReassignOpen(false)}
         onSubmit={reassignTask}
+        onManageMembers={handleManageMembersFromTask}
       />
     </div>
   );

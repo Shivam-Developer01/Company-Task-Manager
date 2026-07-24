@@ -11,7 +11,7 @@ import ActionButtons from "../../components/ActionButtons/ActionButtons";
 import employeeService from "../../services/employeeService";
 
 import AppSearchBar from "../../components/AppSearchBar/AppSearchBar";
-import formatDateTime from "../../utils/formatDateTime"
+import formatDateTime from "../../utils/formatDateTime";
 
 import DataTable from "../../components/DataTable/DataTable";
 import Pagination from "../../components/Pagination/Pagination";
@@ -20,7 +20,6 @@ import EmployeeModal from "../../components/EmployeeModal/EmployeeModal";
 import CredentialModal from "../../components/CredentialModal/CredentialModal";
 import SideDrawer from "../../components/SideDrawer/SideDrawer";
 import ConfirmationModal from "../../components/ConfirmationModal/ConfirmationModal";
-
 
 import { toast } from "react-toastify";
 
@@ -193,11 +192,12 @@ function Employees() {
       {
         key: "department",
         label: "Department",
+        render: (row) => row.department?.name || "-",
       },
-
       {
         key: "designation",
         label: "Designation",
+        render: (row) => row.designation?.name || "-",
       },
 
       {
@@ -298,7 +298,7 @@ function Employees() {
         error.response?.data?.message || "Failed to update employee.",
       );
     } finally {
-      setModalLoading(false);
+      // setModalLoading(false);
     }
   };
 
@@ -379,7 +379,7 @@ function Employees() {
 
               <h3>{selectedEmployee.name}</h3>
 
-              <p>{selectedEmployee.designation}</p>
+              <p>{selectedEmployee.designation?.name}</p>
 
               <StatusBadge
                 status={selectedEmployee.isActive ? "Active" : "Inactive"}
@@ -399,26 +399,22 @@ function Employees() {
 
               <div className="detail-item">
                 <label>Department</label>
-                <span>{selectedEmployee.department}</span>
+                <span>{selectedEmployee.department?.name}</span>
               </div>
 
               <div className="detail-item">
                 <label>Designation</label>
-                <span>{selectedEmployee.designation}</span>
+                <span>{selectedEmployee.designation?.name}</span>
               </div>
 
               <div className="detail-item">
                 <label>Created On</label>
-                <span>
-                  {formatDateTime(selectedEmployee.createdAt)}
-                </span>
+                <span>{formatDateTime(selectedEmployee.createdAt)}</span>
               </div>
 
               <div className="detail-item">
                 <label>Last Updated</label>
-                <span>
-                  {formatDateTime(selectedEmployee.updatedAt)}
-                </span>
+                <span>{formatDateTime(selectedEmployee.updatedAt)}</span>
               </div>
             </div>
 

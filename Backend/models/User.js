@@ -40,15 +40,15 @@ const UserSchema = new mongoose.Schema(
     },
 
     department: {
-      type: String,
-      default: "",
-      trim: true,
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Department",
+      default: null,
     },
 
     designation: {
-      type: String,
-      default: "",
-      trim: true,
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Designation",
+      default: null,
     },
 
     isActive: {

@@ -3,6 +3,8 @@ const CustomError = require("../errors/CustomError");
 const { ROLES } = require("../constants/constants");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const Department = require("../models/Department");
+const Designation = require("../models/Designation");
 
 const { generateAccessToken, generateRefreshToken } = require("../utils/jwt");
 
@@ -35,6 +37,25 @@ const createEmployee = async (req, res) => {
 
   const hashedPassword = await bcrypt.hash(tempPassword, 10);
 
+  const departmentExists = await Department.findOne({
+    _id: department,
+    isActive: true,
+  });
+
+  if (!departmentExists) {
+    throw new CustomError("Department not found", 404);
+  }
+
+  const designationExists = await Designation.findOne({
+    _id: designation,
+    department,
+    isActive: true,
+  });
+
+  if (!designationExists) {
+    throw new CustomError("Designation not found", 404);
+  }
+
   const employee = await User.create({
     name,
     email,
@@ -47,6 +68,10 @@ const createEmployee = async (req, res) => {
     createdBy: req.user.userId,
   });
 
+  const populatedEmployee = await User.findById(employee._id)
+    .populate("department", "name code")
+    .populate("designation", "name code");
+
   res.status(201).json({
     success: true,
     message: "Employee created successfully",
@@ -55,8 +80,8 @@ const createEmployee = async (req, res) => {
       name: employee.name,
       email: employee.email,
       employeeId: employee.employeeId,
-      department: employee.department,
-      designation: employee.designation,
+      department: employee.department?.name,
+      designation: employee.designation?.name,
       role: employee.role,
       temporaryPassword: tempPassword,
     },
@@ -67,7 +92,9 @@ const createEmployee = async (req, res) => {
 const login = async (req, res) => {
   const { email, password } = req.body;
 
-  const user = await User.findOne({ email });
+  const user = await User.findOne({ email })
+    .populate("department", "name code")
+    .populate("designation", "name code");
 
   if (!user) {
     throw new CustomError("Invalid email or password", 401);
@@ -196,7 +223,10 @@ const getAllEmployees = async (req, res) => {
   const skip = (page - 1) * Number(limit);
 
   const employees = await User.find(query)
+    .populate("department", "name code")
+    .populate("designation", "name code")
     .select("-password")
+    .lean()
     .sort({
       [sort]: order === "asc" ? 1 : -1,
     })
@@ -221,7 +251,11 @@ const getEmployeeById = async (req, res) => {
   const employee = await User.findOne({
     _id: id,
     role: "employee",
-  }).select("-password");
+  })
+    .populate("department", "name code")
+    .populate("designation", "name code")
+    .select("-password")
+    .lean();
 
   if (!employee) {
     throw new CustomError("Employee not found", 404);
@@ -240,7 +274,10 @@ const updateEmployee = async (req, res) => {
   const employee = await User.findOne({
     _id: id,
     role: ROLES.EMPLOYEE,
-  }).select("-password");
+  })
+    .populate("department", "name code")
+    .populate("designation", "name code")
+    .select("-password");
 
   if (!employee) {
     throw new CustomError("Employee not found", 404);
@@ -264,14 +301,41 @@ const updateEmployee = async (req, res) => {
     }
   }
 
+  const newDepartment = department ?? employee.department;
+  const newDesignation = designation ?? employee.designation;
+
+  const departmentExists = await Department.findOne({
+    _id: newDepartment,
+    isActive: true,
+  });
+
+  if (!departmentExists) {
+    throw new CustomError("Department not found", 404);
+  }
+
+  const designationExists = await Designation.findOne({
+    _id: newDesignation,
+    department: newDepartment,
+    isActive: true,
+  });
+
+  if (!designationExists) {
+    throw new CustomError("Designation not found", 404);
+  }
+
   employee.name = name ?? employee.name;
   employee.email = email ?? employee.email;
   employee.employeeId = employeeId ?? employee.employeeId;
-  employee.department = department ?? employee.department;
-  employee.designation = designation ?? employee.designation;
+  employee.department = newDepartment?.name;
+  employee.designation = newDesignation?.name;
   employee.updatedBy = req.user.userId;
 
   await employee.save();
+
+  const updatedEmployee = await User.findById(employee._id)
+    .populate("department", "name code")
+    .populate("designation", "name code")
+    .select("-password");
 
   res.status(200).json({
     success: true,
@@ -378,7 +442,11 @@ const changePassword = async (req, res) => {
 };
 
 const getMyProfile = async (req, res) => {
-  const user = await User.findById(req.user.userId).select("-password");
+  const user = await User.findById(req.user.userId)
+    .populate("department", "name code")
+    .populate("designation", "name code")
+    .select("-password")
+    .lean();
 
   if (!user) {
     throw new CustomError("User not found", 404);
@@ -387,6 +455,23 @@ const getMyProfile = async (req, res) => {
   res.status(200).json({
     success: true,
     data: user,
+  });
+};
+
+const getEmployeeOptions = async (req, res) => {
+  const employees = await User.find({
+    role: ROLES.EMPLOYEE,
+    isActive: true,
+  })
+    .populate("department", "name")
+    .populate("designation", "name")
+    .select("name employeeId department designation")
+    .sort({ name: 1 })
+    .lean();
+
+  res.status(200).json({
+    success: true,
+    data: employees,
   });
 };
 
@@ -402,4 +487,5 @@ module.exports = {
   resetEmployeePassword,
   changePassword,
   getMyProfile,
+  getEmployeeOptions,
 };

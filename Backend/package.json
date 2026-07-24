@@ -5,7 +5,8 @@
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js",
-    "script": "node seedManager.js"
+    "script": "node seed/seedManager.js",
+    "seed:masters": "node seed/masterSeeder.js"
   },
   "keywords": [],
   "author": "",

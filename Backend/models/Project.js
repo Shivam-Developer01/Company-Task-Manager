@@ -15,6 +15,13 @@ const ProjectSchema = new mongoose.Schema(
       trim: true,
     },
 
+    members: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+      },
+    ],
+
     isArchived: {
       type: Boolean,
       default: false,

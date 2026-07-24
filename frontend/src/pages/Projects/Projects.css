@@ -122,6 +122,162 @@
   color: #64748b;
 }
 
+.project-progress {
+  margin: 22px 0;
+}
+
+.project-progress-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.project-progress-header span {
+  font-size: 14px;
+  font-weight: 600;
+  color: #4b5563;
+}
+
+.project-progress-header strong {
+  font-size: 14px;
+}
+
+.project-progress-track {
+  width: 100%;
+  height: 8px;
+  background: #e5e7eb;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.project-progress-fill {
+  height: 100%;
+  background: #2563eb;
+  border-radius: inherit;
+  transition: width 0.3s ease;
+}
+
+.project-section {
+  margin-top: 28px;
+}
+
+.project-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.project-section-header h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.project-section-header span {
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.project-members {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.project-member-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 16px;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  background: #fff;
+}
+
+.project-member-info h4 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.project-member-info p {
+  margin-top: 4px;
+  color: #6b7280;
+  font-size: 13px;
+}
+
+.project-empty-state {
+  text-align: center;
+  padding: 20px;
+  border: 1px dashed #d1d5db;
+  border-radius: 10px;
+  color: #6b7280;
+}
+
+.project-task-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.project-task-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 16px;
+  cursor: pointer;
+  transition: 0.2s;
+  background: #fff;
+}
+
+.project-task-card:hover {
+  border-color: #2563eb;
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.08);
+}
+
+.project-task-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+
+.project-task-top h4 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.project-task-meta {
+  margin-top: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.edit-btn {
+  background: #2563eb;
+  color: #fff;
+}
+
+.add-members-btn {
+  background: #10b981;
+  color: #fff;
+}
+
+.create-task-btn {
+  background: #7c3aed;
+  color: #fff;
+}
+
+.archive-btn {
+  background: #dc2626;
+  color: #fff;
+}
+
 @media (max-width: 768px) {
   .page-header {
     flex-direction: column;

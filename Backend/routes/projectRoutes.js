@@ -14,13 +14,19 @@ const {
   getProjectById,
   updateProject,
   toggleProjectStatus,
+  updateProjectMembers,
+  getProjectMembers,
+  getAvailableEmployees,
 } = require("../controllers/projectController");
 
 router.post("/", auth, authorize("manager"), validateProject, createProject);
 
 router.get("/", auth, authorize("manager"), getAllProjects);
-
+router.get("/:id/members", auth, getProjectMembers);
+router.get("/:id/employees", auth, getAvailableEmployees);
 router.get("/:id", auth, authorize("manager"), getProjectById);
+
+router.patch("/:id/members", auth, authorize("manager"), updateProjectMembers);
 
 router.patch(
   "/:id",

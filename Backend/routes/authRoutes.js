@@ -14,6 +14,7 @@ const {
   resetEmployeePassword,
   changePassword,
   getMyProfile,
+  getEmployeeOptions,
 } = require("../controllers/authController");
 
 const auth = require("../middleware/auth");
@@ -25,6 +26,13 @@ const validateCreateEmployee = require("../middleware/validateCreateEmployee");
 const validateUpdateEmployee = require("../middleware/validateUpdateEmployee");
 
 router.get("/employees", auth, authorize("manager"), getAllEmployees);
+
+router.get(
+  "/employees/options",
+  auth,
+  authorize("manager"),
+  getEmployeeOptions,
+);
 
 router.get("/employees/:id", auth, authorize("manager"), getEmployeeById);
 

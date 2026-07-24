@@ -21,6 +21,11 @@ const projectService = {
     return response.data;
   },
 
+  updateProjectMembers: async (id, data) => {
+    const response = await api.patch(`/projects/${id}/members`, data);
+    return response.data;
+  },
+
   toggleStatus: async (id) => {
     const response = await api.patch(`/projects/${id}/status`);
     return response.data;

@@ -67,7 +67,7 @@
 }
 
 .form-modal-body {
-  padding: 26px;
+  padding: 23px;
 
   overflow-y: auto;
 
@@ -75,6 +75,7 @@
 
   min-height: 0;
 }
+
 
 .form-group {
   display: flex;

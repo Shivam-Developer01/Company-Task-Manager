@@ -1,0 +1,5 @@
+input:read-only,
+textarea:read-only {
+  background: #f9fafb;
+  cursor: default;
+}

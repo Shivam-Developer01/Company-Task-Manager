@@ -42,7 +42,7 @@ function RejectTaskModal({ isOpen, loading, onClose, onSubmit }) {
 
           <button
             type="submit"
-            className="save-btn"
+            className="danger-btn"
             disabled={loading || !reason.trim()}
           >
             {loading ? "Rejecting..." : "Reject Task"}

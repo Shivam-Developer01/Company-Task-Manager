@@ -1,10 +1,12 @@
 const Project = require("../models/Project");
 const Task = require("../models/Task");
 const CustomError = require("../errors/CustomError");
+const User = require("../models/User");
+const { ROLES, TASK_STATUS } = require("../constants/constants");
 
 // Create Project
 const createProject = async (req, res) => {
-  const { name, description } = req.body;
+  const { name, description, members = [] } = req.body;
 
   const existingProject = await Project.findOne({ name });
 
@@ -15,6 +17,7 @@ const createProject = async (req, res) => {
   const project = await Project.create({
     name,
     description,
+    members,
     createdBy: req.user.userId,
   });
 
@@ -75,48 +78,80 @@ const getAllProjects = async (req, res) => {
 const getProjectById = async (req, res) => {
   const project = await Project.findById(req.params.id)
     .populate("createdBy", "name email")
-    .populate("updatedBy", "name email");
+    .populate("updatedBy", "name email")
+    .populate({
+      path: "members",
+      select: "name employeeId isActive department designation",
+      populate: [
+        {
+          path: "department",
+          select: "name code",
+        },
+        {
+          path: "designation",
+          select: "name code",
+        },
+      ],
+    });
 
   if (!project) {
     throw new CustomError("Project not found", 404);
   }
 
-  const [totalTasks, assignedTasks, inProgressTasks, completedTasks] =
-    await Promise.all([
-      Task.countDocuments({
-        project: project._id,
-        isArchived: false,
-      }),
+  const tasks = await Task.find({
+    project: project._id,
+    isArchived: false,
+  })
+    .populate("assignedTo", "name employeeId")
+    .select("title status priority dueDate assignedTo createdAt updatedAt")
+    .sort({ createdAt: -1 });
 
-      Task.countDocuments({
-        project: project._id,
-        status: "Assigned",
-        isArchived: false,
-      }),
+  const totalTasks = tasks.length;
 
-      Task.countDocuments({
-        project: project._id,
-        status: "In Progress",
-        isArchived: false,
-      }),
+  const assignedTasks = tasks.filter(
+    (task) => task.status === TASK_STATUS.ASSIGNED,
+  ).length;
 
-      Task.countDocuments({
-        project: project._id,
-        status: "Closed",
-        isArchived: false,
-      }),
-    ]);
+  const acceptedTasks = tasks.filter(
+    (task) => task.status === TASK_STATUS.ACCEPTED,
+  ).length;
+
+  const inProgressTasks = tasks.filter(
+    (task) => task.status === TASK_STATUS.IN_PROGRESS,
+  ).length;
+
+  const submittedTasks = tasks.filter(
+    (task) => task.status === TASK_STATUS.SUBMITTED,
+  ).length;
+
+  const completedTasks = tasks.filter(
+    (task) => task.status === TASK_STATUS.CLOSED,
+  ).length;
+
+  const openTasks = totalTasks - completedTasks;
+
+  const progress =
+    totalTasks === 0 ? 0 : Math.round((completedTasks / totalTasks) * 100);
 
   res.status(200).json({
     success: true,
     data: {
       ...project.toObject(),
 
+      membersCount: project.members.length,
+
+      tasks,
+
       statistics: {
         totalTasks,
         assignedTasks,
+        acceptedTasks,
         inProgressTasks,
+        submittedTasks,
         completedTasks,
+        openTasks,
+        progress,
+        members: project.members.length,
       },
     },
   });
@@ -124,7 +159,7 @@ const getProjectById = async (req, res) => {
 
 // Update Project
 const updateProject = async (req, res) => {
-  const { name, description } = req.body;
+  const { name, description, members } = req.body;
 
   const project = await Project.findById(req.params.id);
 
@@ -133,7 +168,10 @@ const updateProject = async (req, res) => {
   }
 
   if (name && name !== project.name) {
-    const existingProject = await Project.findOne({ name });
+    const existingProject = await Project.findOne({
+      name,
+      _id: { $ne: project._id },
+    });
 
     if (existingProject) {
       throw new CustomError("Project name already exists", 409);
@@ -146,23 +184,83 @@ const updateProject = async (req, res) => {
     project.description = description;
   }
 
+  if (members !== undefined) {
+    if (!Array.isArray(members)) {
+      throw new CustomError("Members must be an array", 400);
+    }
+
+    const uniqueMembers = [...new Set(members)];
+
+    const employees = await User.find({
+      _id: { $in: uniqueMembers },
+      role: ROLES.EMPLOYEE,
+      isActive: true,
+    }).select("_id");
+
+    if (employees.length !== uniqueMembers.length) {
+      throw new CustomError(
+        "One or more selected employees are invalid or inactive",
+        400,
+      );
+    }
+
+    project.members = uniqueMembers;
+  }
+
   project.updatedBy = req.user.userId;
 
   await project.save();
 
+  const updatedProject = await Project.findById(project._id)
+    .populate("createdBy", "name")
+    .populate("updatedBy", "name")
+    .populate({
+      path: "members",
+      select: "name employeeId isActive department designation",
+      populate: [
+        {
+          path: "department",
+          select: "name code",
+        },
+        {
+          path: "designation",
+          select: "name code",
+        },
+      ],
+    });
+
   res.status(200).json({
     success: true,
     message: "Project updated successfully",
-    data: project,
+    data: updatedProject,
   });
 };
 
-// Archive Project
 const toggleProjectStatus = async (req, res) => {
   const project = await Project.findById(req.params.id);
 
   if (!project) {
     throw new CustomError("Project not found", 404);
+  }
+
+  // Prevent archiving until every task is closed
+  if (!project.isArchived) {
+    const activeTasks = await Task.countDocuments({
+      project: project._id,
+      isArchived: false,
+      status: {
+        $ne: TASK_STATUS.CLOSED,
+      },
+    });
+
+    if (activeTasks > 0) {
+      throw new CustomError(
+        `Project cannot be archived. ${activeTasks} task${
+          activeTasks > 1 ? "s are" : " is"
+        } still open.`,
+        400,
+      );
+    }
   }
 
   project.isArchived = !project.isArchived;
@@ -179,10 +277,181 @@ const toggleProjectStatus = async (req, res) => {
   });
 };
 
+const updateProjectMembers = async (req, res) => {
+  const { id } = req.params;
+  const { members } = req.body;
+
+  const project = await Project.findById(id);
+
+  if (!project) {
+    throw new CustomError("Project not found", 404);
+  }
+
+  if (!Array.isArray(members)) {
+    throw new CustomError("Members must be an array", 400);
+  }
+
+  // Remove duplicate ids
+  const uniqueMembers = [...new Set(members)];
+
+  // Fetch active employees
+  const employees = await User.find({
+    _id: { $in: uniqueMembers },
+    role: ROLES.EMPLOYEE,
+    isActive: true,
+  }).select("_id");
+
+  if (employees.length !== uniqueMembers.length) {
+    throw new CustomError(
+      "One or more selected employees are invalid or inactive",
+      400,
+    );
+  }
+
+  // -------------------------------
+  // Validate removed members
+  // -------------------------------
+
+  const removedMembers = project.members.filter(
+    (memberId) =>
+      !uniqueMembers.some((id) => id.toString() === memberId.toString()),
+  );
+
+  if (removedMembers.length > 0) {
+    const activeTasks = await Task.aggregate([
+      {
+        $match: {
+          project: project._id,
+          assignedTo: { $in: removedMembers },
+          status: { $ne: "Closed" },
+          isArchived: false,
+        },
+      },
+      {
+        $group: {
+          _id: "$assignedTo",
+          count: { $sum: 1 },
+        },
+      },
+    ]);
+
+    if (activeTasks.length > 0) {
+      const employeeIds = activeTasks.map((task) => task._id);
+
+      const employees = await User.find({
+        _id: { $in: employeeIds },
+      }).select("name");
+
+      const employeeMap = Object.fromEntries(
+        employees.map((employee) => [employee._id.toString(), employee.name]),
+      );
+
+      const message = activeTasks
+        .map((task) => {
+          const name = employeeMap[task._id.toString()] || "Employee";
+
+          return `${name} (${task.count})`;
+        })
+        .join(", ");
+
+      throw new CustomError(
+        `Cannot remove project members. Active tasks found: ${message}. Complete or reassign these tasks first.`,
+        400,
+      );
+    }
+  }
+
+  project.members = uniqueMembers;
+  project.updatedBy = req.user.userId;
+
+  await project.save();
+
+  const updatedProject = await Project.findById(project._id)
+    .populate("members", "name employeeId email")
+    .populate("createdBy", "name")
+    .populate("updatedBy", "name");
+
+  res.status(200).json({
+    success: true,
+    message: "Project members updated successfully",
+    data: updatedProject,
+  });
+};
+
+const getProjectMembers = async (req, res) => {
+  const { id } = req.params;
+
+  const project = await Project.findById(id).populate({
+    path: "members",
+    select: "name email employeeId isActive department designation",
+    populate: [
+      {
+        path: "department",
+        select: "name code",
+      },
+      {
+        path: "designation",
+        select: "name code",
+      },
+    ],
+  });
+
+  if (!project) {
+    throw new CustomError("Project not found", 404);
+  }
+
+  res.status(200).json({
+    success: true,
+    count: project.members.length,
+    data: project.members,
+  });
+};
+
+const getAvailableEmployees = async (req, res) => {
+  const { id } = req.params;
+
+  const project = await Project.findById(id).select("members");
+
+  if (!project) {
+    throw new CustomError("Project not found", 404);
+  }
+
+  const memberIds = project.members.map((member) => member.toString());
+
+  const employees = await User.find({
+    role: ROLES.EMPLOYEE,
+    isActive: true,
+  })
+    .populate("department", "name code")
+    .populate("designation", "name code")
+    .select("name email employeeId department designation isActive")
+    .sort({ name: 1 });
+
+  const data = employees.map((employee) => ({
+    _id: employee._id,
+    name: employee.name,
+    email: employee.email,
+    employeeId: employee.employeeId,
+    department: employee.department?.name,
+    designation: employee.designation?.name,
+    isActive: employee.isActive,
+    isMember: memberIds.includes(employee._id.toString()),
+  }));
+
+  res.status(200).json({
+    success: true,
+    count: data.length,
+    data,
+  });
+};
+
 module.exports = {
   createProject,
   getAllProjects,
   getProjectById,
   updateProject,
   toggleProjectStatus,
+  updateProjectMembers,
+  getProjectMembers,
+  getAvailableEmployees,
 };

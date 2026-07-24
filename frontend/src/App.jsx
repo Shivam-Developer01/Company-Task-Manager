@@ -1,7 +1,7 @@
 import { Routes, Route } from "react-router-dom";
 
 import Login from "./pages/Login/Login";
-
+import PublicRoute from "./routes/PublicRoute";
 
 import Dashboard from "./pages/Dashboard/Dashboard";
 import Employees from "./pages/Employees/Employees";
@@ -19,11 +19,20 @@ import ProtectedRoute from "./routes/ProtectedRoute";
 
 import MainLayout from "./layouts/MainLayout/MainLayout";
 import EmployeeLayout from "./layouts/EmployeeLayout/EmployeeLayout";
+import Departments from "./pages/Departments/Departments";
+import Designations from "./pages/Designations/Designations";
 
 function App() {
   return (
     <Routes>
-      <Route path="/" element={<Login />} />
+      <Route
+        path="/"
+        element={
+          <PublicRoute>
+            <Login />
+          </PublicRoute>
+        }
+      />
 
       {/* ================= MANAGER ================= */}
 
@@ -37,6 +46,10 @@ function App() {
         <Route path="/dashboard" element={<Dashboard />} />
 
         <Route path="/employees" element={<Employees />} />
+
+        <Route path="/departments" element={<Departments />} />
+
+        <Route path="/designations" element={<Designations />} />
 
         <Route path="/projects" element={<Projects />} />
 

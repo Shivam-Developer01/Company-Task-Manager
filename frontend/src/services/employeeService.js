@@ -38,6 +38,12 @@ const employeeService = {
 
     return response.data;
   },
+
+  getEmployeeOptions: async () => {
+    const response = await api.get("/auth/employees/options");
+
+    return response.data;
+  },
 };
 
 export default employeeService;

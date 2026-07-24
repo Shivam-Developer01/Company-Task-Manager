@@ -185,9 +185,24 @@ function EmployeeTaskDrawer({
               </div>
             )}
           </div>
+          {task.checklist.map((item) => (
+            <div
+              key={item._id}
+              className={`checklist-d-row ${item.completed ? "completed" : ""}`}
+            >
+              <input
+                type="checkbox"
+                checked={item.completed}
+                disabled={task.status !== "In Progress"}
+                onChange={() => onChecklistToggle(task._id, item._id)}
+              />
+
+              <span>{item.title}</span>
+            </div>
+          ))}
           {task.status === "Assigned" && (
             <div className="task-drawer-actions">
-              <button className="danger-btn" onClick={() => onReject(task)}>
+              <button className="danger-d-btn" onClick={() => onReject(task)}>
                 Reject
               </button>
 
@@ -211,21 +226,6 @@ function EmployeeTaskDrawer({
               </button>
             </div>
           )}
-          {task.checklist.map((item) => (
-            <div
-              key={item._id}
-              className={`checklist-d-row ${item.completed ? "completed" : ""}`}
-            >
-              <input
-                type="checkbox"
-                checked={item.completed}
-                disabled={task.status !== "In Progress"}
-                onChange={() => onChecklistToggle(task._id, item._id)}
-              />
-
-              <span>{item.title}</span>
-            </div>
-          ))}
           {task.status === "In Progress" && (
             <div className="task-drawer-actions">
               <button className="save-d-btn" onClick={() => onSubmit(task)}>

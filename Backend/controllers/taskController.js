@@ -26,6 +26,7 @@ const createTask = async (req, res) => {
     checklist,
   } = req.body;
 
+  // Validate employee
   const employee = await User.findOne({
     _id: assignedTo,
     role: ROLES.EMPLOYEE,
@@ -36,17 +37,32 @@ const createTask = async (req, res) => {
     throw new CustomError("Employee not found or inactive", 404);
   }
 
+  let projectDoc = null;
+
+  // Validate project and membership
   if (project) {
-    const projectExists = await Project.findOne({
+    projectDoc = await Project.findOne({
       _id: project,
       isArchived: false,
     });
 
-    if (!projectExists) {
+    if (!projectDoc) {
       throw new CustomError("Project not found", 404);
+    }
+
+    const isMember = projectDoc.members.some(
+      (member) => member.toString() === assignedTo.toString(),
+    );
+
+    if (!isMember) {
+      throw new CustomError(
+        "Assigned employee is not a member of this project",
+        400,
+      );
     }
   }
 
+  // Upload reference attachments
   const referenceAttachments = (req.files || []).map((file) => ({
     fileName: file.filename,
     originalName: file.originalname,
@@ -55,25 +71,40 @@ const createTask = async (req, res) => {
     fileSize: file.size,
   }));
 
+  // Parse checklist if it comes as JSON string (multipart/form-data)
+  let parsedChecklist = [];
+
+  if (checklist) {
+    try {
+      parsedChecklist =
+        typeof checklist === "string" ? JSON.parse(checklist) : checklist;
+    } catch {
+      throw new CustomError("Invalid checklist format", 400);
+    }
+  }
+
+  // Create task
   const task = await Task.create({
     title,
     description,
-    project: project || null,
+    project: projectDoc ? projectDoc._id : null,
     assignedTo,
     assignedBy: req.user.userId,
     priority,
     dueDate,
-    checklist: checklist || [],
+    checklist: parsedChecklist,
     referenceAttachments,
     createdBy: req.user.userId,
   });
 
+  // Activity log
   await createActivity({
     task: task._id,
     action: "Task Created",
     performedBy: req.user.userId,
   });
 
+  // Notification
   await createNotification({
     user: task.assignedTo,
     title: "New Task Assigned",
@@ -224,8 +255,15 @@ const getTaskById = async (req, res) => {
 =========================================================== */
 
 const updateTask = async (req, res) => {
-  const { title, description, priority, dueDate, project, checklist } =
-    req.body;
+  const {
+    title,
+    description,
+    assignedTo,
+    priority,
+    dueDate,
+    project,
+    checklist,
+  } = req.body;
 
   const task = await Task.findById(req.params.id);
 
@@ -248,17 +286,58 @@ const updateTask = async (req, res) => {
     );
   }
 
-  if (project) {
-    const projectExists = await Project.findOne({
-      _id: project,
+  // Determine final project and assignee
+  const projectId = project ?? task.project;
+  const assignedEmployeeId = assignedTo ?? task.assignedTo;
+
+  let projectDoc = null;
+
+  if (projectId) {
+    projectDoc = await Project.findOne({
+      _id: projectId,
       isArchived: false,
     });
 
-    if (!projectExists) {
+    if (!projectDoc) {
       throw new CustomError("Project not found", 404);
     }
 
-    task.project = project;
+    const employee = await User.findOne({
+      _id: assignedEmployeeId,
+      role: ROLES.EMPLOYEE,
+      isActive: true,
+    });
+
+    if (!employee) {
+      throw new CustomError("Employee not found or inactive", 404);
+    }
+
+    const isMember = projectDoc.members.some(
+      (member) => member.toString() === assignedEmployeeId.toString(),
+    );
+
+    if (!isMember) {
+      throw new CustomError(
+        "Selected employee is not a member of this project",
+        400,
+      );
+    }
+
+    task.project = projectId;
+    task.assignedTo = assignedEmployeeId;
+  } else if (assignedTo) {
+    // For tasks without a project
+    const employee = await User.findOne({
+      _id: assignedTo,
+      role: ROLES.EMPLOYEE,
+      isActive: true,
+    });
+
+    if (!employee) {
+      throw new CustomError("Employee not found or inactive", 404);
+    }
+
+    task.assignedTo = assignedTo;
   }
 
   if (title !== undefined) task.title = title;
@@ -309,6 +388,7 @@ const updateTask = async (req, res) => {
     data: task,
   });
 };
+
 /* ===========================================================
    WITHDRAW TASK
 =========================================================== */
@@ -377,19 +457,8 @@ const reassignTask = async (req, res) => {
     throw new CustomError("Task not found", 404);
   }
 
-  const reassignableStatuses = [
-    TASK_STATUS.ASSIGNED,
-    TASK_STATUS.ACCEPTED,
-    TASK_STATUS.IN_PROGRESS,
-    TASK_STATUS.TASK_REJECTED,
-    TASK_STATUS.WITHDRAWN,
-  ];
-
-  if (!reassignableStatuses.includes(task.status)) {
-    throw new CustomError(
-      `Tasks with status "${task.status}" cannot be reassigned.`,
-      400,
-    );
+  if (task.status !== TASK_STATUS.WITHDRAWN) {
+    throw new CustomError("Task must be withdrawn before reassignment.", 400);
   }
 
   const employee = await User.findOne({
@@ -400,6 +469,21 @@ const reassignTask = async (req, res) => {
 
   if (!employee) {
     throw new CustomError("Employee not found", 404);
+  }
+
+  if (task.project) {
+    const project = await Project.findById(task.project);
+
+    const isMember = project.members.some(
+      (member) => member.toString() === assignedTo.toString(),
+    );
+
+    if (!isMember) {
+      throw new CustomError(
+        "Selected employee is not a member of this project.",
+        400,
+      );
+    }
   }
 
   task.assignedTo = assignedTo;

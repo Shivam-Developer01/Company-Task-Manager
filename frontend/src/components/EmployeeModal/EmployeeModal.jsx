@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
 import FormModal from "../FormModal/FormModal";
 
+import departmentService from "../../services/departmentService";
+import designationService from "../../services/designationService";
+
 import "./EmployeeModal.css";
 
 function EmployeeModal({
@@ -18,14 +21,37 @@ function EmployeeModal({
     designation: "",
   });
 
+  const [departments, setDepartments] = useState([]);
+  const [designations, setDesignations] = useState([]);
+
   useEffect(() => {
+    if (!isOpen) return;
+
+    const loadDepartments = async () => {
+      try {
+        const response = await departmentService.getDepartments({
+          limit: 100,
+        });
+
+        setDepartments(response.data);
+      } catch (error) {
+        console.error(error);
+      }
+    };
+
+    loadDepartments();
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
     if (employee) {
       setFormData({
         name: employee.name || "",
         email: employee.email || "",
         employeeId: employee.employeeId || "",
-        department: employee.department || "",
-        designation: employee.designation || "",
+        department: employee.department?._id || employee.department || "",
+        designation: employee.designation?._id || employee.designation || "",
       });
     } else {
       setFormData({
@@ -35,15 +61,51 @@ function EmployeeModal({
         department: "",
         designation: "",
       });
+
+      setDesignations([]);
     }
   }, [employee, isOpen]);
+
+  useEffect(() => {
+    if (!formData.department) {
+      setDesignations([]);
+      return;
+    }
+
+    const loadDesignations = async () => {
+      try {
+        const response = await designationService.getDesignations({
+          department: formData.department,
+          limit: 100,
+        });
+
+        setDesignations(response.data);
+      } catch (error) {
+        console.error(error);
+      }
+    };
+
+    loadDesignations();
+  }, [formData.department]);
 
   if (!isOpen) return null;
 
   const handleChange = (e) => {
+    const { name, value } = e.target;
+
+    if (name === "department") {
+      setFormData((prev) => ({
+        ...prev,
+        department: value,
+        designation: "",
+      }));
+
+      return;
+    }
+
     setFormData((prev) => ({
       ...prev,
-      [e.target.name]: e.target.value,
+      [name]: value,
     }));
   };
 
@@ -93,29 +155,47 @@ function EmployeeModal({
               value={formData.employeeId}
               onChange={handleChange}
               required
+              disabled={!!employee}
             />
           </div>
 
           <div className="form-group">
             <label>Department</label>
 
-            <input
+            <select
               name="department"
               value={formData.department}
               onChange={handleChange}
               required
-            />
+            >
+              <option value="">Select Department</option>
+
+              {departments.map((department) => (
+                <option key={department._id} value={department._id}>
+                  {department.name}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div className="form-group">
             <label>Designation</label>
 
-            <input
+            <select
               name="designation"
               value={formData.designation}
               onChange={handleChange}
               required
-            />
+              disabled={!formData.department}
+            >
+              <option value="">Select Designation</option>
+
+              {designations.map((designation) => (
+                <option key={designation._id} value={designation._id}>
+                  {designation.name}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
 

@@ -2,6 +2,8 @@ export const ROUTES = {
   //Manager
   DASHBOARD: "/dashboard",
   EMPLOYEES: "/employees",
+  DEPARTMENTS: "/departments",
+  DESIGNATIONS: "/designations",
   PROJECTS: "/projects",
   TASKS: "/tasks",
   SUBMISSIONS: "/submissions",

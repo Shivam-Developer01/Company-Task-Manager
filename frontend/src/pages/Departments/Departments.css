@@ -1,0 +1,119 @@
+.department-page {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.department-profile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding-bottom: 24px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.profile-avatar {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: #2563eb;
+  color: #fff;
+  font-size: 28px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+.department-profile h3 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.department-profile p {
+  margin: 6px 0 14px;
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.department-details {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 24px;
+}
+
+.detail-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.detail-item label {
+  font-size: 13px;
+  color: #6b7280;
+  font-weight: 600;
+}
+
+.detail-item span {
+  font-size: 15px;
+  color: #111827;
+  word-break: break-word;
+}
+
+.drawer-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 30px;
+}
+
+.drawer-btn {
+  flex: 1;
+  border: none;
+  border-radius: 8px;
+  padding: 11px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.edit-btn {
+  background: #2563eb;
+  color: #fff;
+}
+
+.edit-btn:hover {
+  background: #1d4ed8;
+}
+
+.danger-btn {
+  background: #dc2626;
+  color: #fff;
+}
+
+.danger-btn:hover {
+  background: #b91c1c;
+}
+
+.success-btn {
+  background: #16a34a;
+  color: #fff;
+}
+
+.success-btn:hover {
+  background: #15803d;
+}
+
+@media (max-width: 768px) {
+  .drawer-actions {
+    flex-direction: column;
+  }
+
+  .drawer-btn {
+    width: 100%;
+  }
+}

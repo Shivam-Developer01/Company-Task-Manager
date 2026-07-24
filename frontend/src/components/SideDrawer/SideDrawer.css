@@ -27,7 +27,7 @@
 
   right: -500px;
 
-  width: 450px;
+  width: 500px;
 
   max-width: 100%;
 
@@ -79,7 +79,7 @@
 }
 
 .drawer-content {
-  padding: 24px;
+  padding: 20px;
 
   overflow: auto;
 
