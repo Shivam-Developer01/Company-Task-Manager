@@ -1,4 +1,4 @@
-# Task Manager Documentation
+# Company Task Manager Documentation
 
 ## Overview
 
@@ -17,6 +17,8 @@ Task Manager is a full-stack MERN application developed to help teams efficientl
 - React Icons
 - CSS3
 - Context API
+- React Context API
+- Custom Reusable Hooks
 
 ## Backend
 
@@ -29,6 +31,9 @@ Task Manager is a full-stack MERN application developed to help teams efficientl
 - bcryptjs
 - Multer
 - Express Validator
+- Helmet
+- Compression
+- CORS
 
 ---
 
@@ -39,12 +44,14 @@ Task Manager is a full-stack MERN application developed to help teams efficientl
 - Secure Login
 - JWT Access Token Authentication
 - Refresh Token Authentication
-- Automatic Token Refresh
+- Automatic Token Refresh using Axios Interceptors
 - Logout
 - Role Based Authorization
 - Protected Routes
+- Public Route Protection
 - Mandatory Password Change on First Login
 - Password Reset by Manager
+- Persistent Login
 
 ---
 
@@ -52,14 +59,14 @@ Task Manager is a full-stack MERN application developed to help teams efficientl
 
 ### Manager Dashboard
 
-- Statistics Cards
-- Employee Summary
-- Project Summary
+- Employee Statistics
+- Project Statistics
 - Task Statistics
 - Submission Statistics
-- Pending Reviews
-- Upcoming Deadlines
 - Recent Activities
+- Pending Reviews
+- Recent Notifications
+- Quick Navigation
 
 ### Employee Dashboard
 
@@ -68,6 +75,9 @@ Task Manager is a full-stack MERN application developed to help teams efficientl
 - My Recent Tasks
 - My Recent Activities
 - Upcoming Deadlines
+- View Employee Profile
+- Department Assignment
+- Designation Assignment
 
 ---
 
@@ -91,18 +101,48 @@ Employee can
 
 ---
 
+# Department Management
+
+Manager can
+
+- Create Department
+- Edit Department
+- Activate Department
+- Deactivate Department
+- Search Departments
+- Pagination
+
+---
+
+# Designation Management
+
+Manager can
+
+- Create Designation
+- Edit Designation
+- Activate Designation
+- Deactivate Designation
+- Search Designations
+- Pagination
+
+---
+
 # Project Management
 
 Manager can
 
 - Create Project
 - Edit Project
-- Archive Project
-- Restore Project
+- Manage Members
+- View Project Overview
+- View Project Statistics
+- View Project Tasks
 - Search Projects
 - Pagination
-- Sorting
-- View Project Details
+- Archive Project
+- Restore Project
+- Project Member Validation
+- Create Task directly from Project
 
 ---
 
@@ -123,6 +163,9 @@ Manager can
 - Sorting
 - View Task Details
 - Upload Reference Attachments
+- Create Tasks inside Projects
+- Automatic Project Member Validation
+- Activity Logging
 
 Employee can
 
@@ -132,6 +175,7 @@ Employee can
 - Start Working
 - Update Checklist
 - Submit Tasks
+- Upload Multiple Submission Files
 
 ---
 
@@ -227,6 +271,26 @@ Permissions
 
 ---
 
+# Project Workflow
+
+Project
+
+│
+
+├── Members
+
+├── Tasks
+
+├── Statistics
+
+├── Activity
+
+└── Archive
+
+Managers can create project-specific tasks that can only be assigned to project members.
+
+---
+
 # Task Lifecycle
 
 ```
@@ -262,6 +326,35 @@ Assigned
      ▼
 Withdrawn
 ```
+
+or
+
+Submitted
+│
+▼
+Manager Rejects
+│
+▼
+In Progress
+
+or
+
+Assigned
+Accepted
+In Progress
+│
+▼
+Withdrawn
+
+or
+
+Withdrawn
+│
+▼
+Reassigned
+│
+▼
+Assigned
 
 ---
 
@@ -317,6 +410,8 @@ Retry Original Request
 # Database Collections
 
 - Users
+- Departments
+- Designations
 - Projects
 - Tasks
 - Submissions
@@ -342,6 +437,24 @@ Retry Original Request
 - CRUD
 - Search
 - Filters
+- Pagination
+
+---
+
+Departments
+
+- CRUD
+- Status Change
+- Search
+- Pagination
+
+---
+
+Designations
+
+- CRUD
+- Status Change
+- Search
 - Pagination
 
 ---
@@ -386,6 +499,9 @@ Retry Original Request
 - Search
 - Filters
 - Pagination
+- Notification Navigation
+- Deep Linking to Tasks
+- Deep Linking to Submissions
 
 ---
 
@@ -401,6 +517,7 @@ Retry Original Request
 - DataTable
 - Pagination
 - AppSearchBar
+- SearchableMultiSelect
 - StatusBadge
 - ActionButtons
 - Loader
@@ -413,6 +530,10 @@ Retry Original Request
 - Navbar
 - Sidebar
 - EmployeeSidebar
+- TaskCard
+- ProjectCard
+- FilterBar
+- Modal Components
 
 ---
 
@@ -420,6 +541,7 @@ Retry Original Request
 
 - useDebounce
 - useNotification
+- useTableParams
 
 ---
 
@@ -429,8 +551,9 @@ Retry Original Request
 - formatDateTime
 - formatRelativeTime
 - formatDueDate
-- token helpers
+- downloadFile
 - Axios Interceptors
+- Token Helpers
 
 ---
 
@@ -446,25 +569,34 @@ Retry Original Request
 - File Upload Validation
 - Secure Password Reset
 - First Login Password Change
+- Helmet
+- Compression
+- CORS
+- Centralized Error Handling
+- Express Validator
 
 ---
 
 # Project Highlights
 
-- Full MERN Stack Architecture
-- Modular Folder Structure
-- Clean MVC Backend
+- Enterprise-style MERN Architecture
+- Modular MVC Backend
+- JWT + Refresh Token Authentication
 - Role-Based Access Control
+- Public & Protected Route Guards
+- Department & Designation Masters
+- Project Member Management
+- Advanced Task Lifecycle
+- Submission Review Workflow
 - Automatic Activity Logging
-- Automatic Notification System
-- File Upload Support
-- Dashboard Analytics
-- Refresh Token Authentication
+- Notification System with Deep Linking
 - Reusable React Components
-- Responsive Design
-- Search, Filter, Sorting & Pagination
-- Professional UI with Drawers and Modals
-- Scalable Codebase Ready for Future Enhancements
+- Custom Hooks
+- Generic DataTable Architecture
+- Advanced Search, Filters & Pagination
+- Responsive UI
+- Clean Folder Structure
+- Scalable Codebase
 
 ---
 
@@ -487,4 +619,4 @@ Retry Original Request
 
 ## Conclusion
 
-Task Manager is a production-oriented task management application built using the MERN stack. It follows clean architecture principles, secure authentication practices with JWT and Refresh Tokens, modular component design, and role-based access control. The application streamlines task assignment, project tracking, submission review, and team collaboration through an intuitive, responsive interface and a scalable backend architecture suitable for real-world business workflows.
+Company Task Manager is a production-oriented task management application built using the MERN stack. It follows clean architecture principles, secure authentication practices with JWT and Refresh Tokens, modular component design, and role-based access control. The application streamlines task assignment, project tracking, submission review, and team collaboration through an intuitive, responsive interface and a scalable backend architecture suitable for real-world business workflows.
