@@ -2,7 +2,9 @@
 
 ## Overview
 
-Task Manager is a full-stack MERN application developed to help teams efficiently manage projects, tasks, employees, submissions, and notifications. The system provides separate interfaces for Managers and Employees with secure JWT authentication, role-based authorization, task tracking, submission review, activity logging, and real-time notifications.
+Company Task Manager is a production-ready enterprise MERN application developed to streamline project management, task assignment, employee management, submission review, and organizational collaboration.
+
+The system provides dedicated interfaces for Admins, Managers, and Employees with secure JWT authentication, Refresh Token support, role-based authorization, project management, task workflows, submission review, dashboard analytics, activity logging, and real-time notifications.
 
 ---
 
@@ -57,33 +59,41 @@ Task Manager is a full-stack MERN application developed to help teams efficientl
 
 ## Dashboard
 
-### Manager Dashboard
+## Admin Dashboard
+
+- User Overview
+- Project Overview
+- Manager Performance
+- System Statistics
+
+## Manager Dashboard
 
 - Employee Statistics
 - Project Statistics
-- Task Statistics
-- Submission Statistics
-- Recent Activities
+- Task Status Distribution
+- Task Overview
+- Overdue Tasks
 - Pending Reviews
-- Recent Notifications
+- Recent Tasks
+- Upcoming Deadlines
+- Recent Activities
+- Project Filter
 - Quick Navigation
 
-### Employee Dashboard
+## Employee Dashboard
 
 - Personal Task Statistics
-- Pending Reviews
-- My Recent Tasks
-- My Recent Activities
+- Assigned Tasks
+- Recent Activities
 - Upcoming Deadlines
-- View Employee Profile
-- Department Assignment
-- Designation Assignment
+- Pending Reviews
+- Employee Profile
 
 ---
 
 # Employee Management
 
-Manager can
+Admin / Manager can
 
 - Create Employee
 - View Employees
@@ -103,7 +113,7 @@ Employee can
 
 # Department Management
 
-Manager can
+Admin / Manager can
 
 - Create Department
 - Edit Department
@@ -116,7 +126,7 @@ Manager can
 
 # Designation Management
 
-Manager can
+Admin / Manager can
 
 - Create Designation
 - Edit Designation
@@ -129,26 +139,28 @@ Manager can
 
 # Project Management
 
-Manager can
+Manager/Admin can
 
-- Create Project
-- Edit Project
+- Create Projects
+- Edit Projects
+- Archive Projects
+- Restore Projects
 - Manage Members
+- Add Managers
+- Add Employees
+- Remove Members
 - View Project Overview
 - View Project Statistics
 - View Project Tasks
-- Search Projects
+- Search
 - Pagination
-- Archive Project
-- Restore Project
-- Project Member Validation
-- Create Task directly from Project
+- Automatic Member Notifications
 
 ---
 
 # Task Management
 
-Manager can
+Admin / Manager can
 
 - Create Tasks
 - Assign Tasks
@@ -166,6 +178,10 @@ Manager can
 - Create Tasks inside Projects
 - Automatic Project Member Validation
 - Activity Logging
+- Independent Tasks
+- Project Tasks
+- Task Activities
+- Role-based Visibility
 
 Employee can
 
@@ -200,16 +216,21 @@ Manager
 
 # Notification System
 
-Automatic notifications for
-
+- Automatic notifications for
 - Task Assigned
-- Task Accepted
-- Task Rejected
-- Task Submitted
+- Task Updated
+- Task Reassigned
+- Task Withdrawn
+- Assignment Accepted
+- Assignment Rejected
+- Submission Received
 - Submission Approved
 - Submission Rejected
-- Task Withdrawn
-- Task Reassigned
+- Project Created
+- Project Member Added
+- Project Member Removed
+- Project Archived
+- Project Restored
 
 Features
 
@@ -219,6 +240,10 @@ Features
 - Mark as Read
 - Mark All Read
 - Navigate directly to related Task/Submission
+- Deep Linking to Projects
+- Deep Linking to Tasks
+- Deep Linking to Submissions
+- Automatic Expiration (TTL)
 
 ---
 
@@ -242,6 +267,22 @@ Examples
 ---
 
 # User Roles
+
+## Admin
+
+Permissions
+
+- Create Managers
+- Create Employees
+- Manage Departments
+- Manage Designations
+- Manage Projects
+- Manage Tasks
+- Review Submissions
+- Access System Dashboard
+- View Manager Performance
+- View Notifications
+- Change Password
 
 ## Manager
 
@@ -277,13 +318,17 @@ Project
 
 │
 
-├── Members
+├── Managers
+
+├── Employees
 
 ├── Tasks
 
 ├── Statistics
 
-├── Activity
+├── Activities
+
+├── Notifications
 
 └── Archive
 
@@ -295,27 +340,45 @@ Managers can create project-specific tasks that can only be assigned to project 
 
 ```
 Assigned
-     │
-     ▼
+   │
+   ├────────► Assignment Rejected
+
+   ▼
+
 Accepted
-     │
-     ▼
+
+   ▼
+
 In Progress
-     │
-     ▼
+
+   ▼
+
 Submitted
-     │
-     ▼
+
+   ├────────► Rejected
+   │             │
+   │             ▼
+   │        In Progress
+   │
+   ▼
+
 Closed
-```
 
-Alternative Flow
+Alternative
 
-```
 Assigned
-     │
-     ▼
-Rejected
+
+▼
+
+Withdrawn├────────► Closed
+
+▼
+
+Reassigned
+
+▼
+
+Assigned
 ```
 
 or
@@ -432,25 +495,16 @@ Retry Original Request
 
 ---
 
-## Employees
+## User Management
 
-- CRUD
-- Search
-- Filters
-- Pagination
-
----
-
-Departments
-
-- CRUD
-- Status Change
-- Search
-- Pagination
+- Employee CRUD
+- Manager CRUD
+- Profile Management
+- Password Management
 
 ---
 
-Designations
+## Department Management
 
 - CRUD
 - Status Change
@@ -459,56 +513,92 @@ Designations
 
 ---
 
-## Projects
+## Designation Management
 
 - CRUD
-- Archive
-- Restore
+- Status Change
 - Search
 - Pagination
 
 ---
 
-## Tasks
+## Project Management
+
+- CRUD
+- Member Management
+- Archive / Restore
+- Search
+- Pagination
+- Project Statistics
+
+---
+
+## Task Management
 
 - CRUD
 - Assignment
+- Reassignment
+- Withdrawal
+- Archive / Restore
 - Checklist
 - Reference Attachments
-- Status Management
+- Status Workflow
 - Search
 - Filters
 - Pagination
 
 ---
 
-## Submissions
+## Submission Management
 
 - Submit Work
-- Attachments
+- Multiple Attachments
 - Approval
 - Rejection
 - Feedback
 
 ---
 
-## Notifications
+## Notification System
 
 - Automatic Notification Creation
 - Read Status
 - Search
 - Filters
 - Pagination
-- Notification Navigation
-- Deep Linking to Tasks
-- Deep Linking to Submissions
+- Deep Linking
+- TTL Expiration
 
 ---
 
-## Activities
+## Activity Logging
 
-- Automatic Activity Logging
+- Automatic Activity Creation
 - Timeline View
+- Task History
+- Project History
+
+---
+
+## Dashboard Analytics
+
+- Admin Dashboard
+- Manager Dashboard
+- Employee Dashboard
+- Project Analytics
+- Task Statistics
+- Employee Statistics
+- Manager Performance
+
+---
+
+## Access Control Helpers
+
+- Project Access
+- Task Access
+- Submission Access
+- Dashboard Scope
+- Role-based Authorization
 
 ---
 
@@ -574,6 +664,10 @@ Designations
 - CORS
 - Centralized Error Handling
 - Express Validator
+- Role-based Access Control
+- Project-level Authorization
+- Task-level Authorization
+- Submission-level Authorization
 
 ---
 
@@ -597,22 +691,171 @@ Designations
 - Responsive UI
 - Clean Folder Structure
 - Scalable Codebase
+- Dashboard Analytics
+- Enterprise RBAC
+- Service-based Backend
+- Modular Controller Structure
+- Activity Timeline
+
+---
+
+# Access Control
+
+Admin
+
+- Full access
+
+Manager
+
+- Projects created by manager
+- Projects where manager is a member
+- Independent tasks assigned by manager
+
+Employee
+
+- Assigned Tasks
+- Own Submissions
+- Own Notifications
+
+---
+
+# Backend Architecture
+
+```
+Routes
+   │
+   ▼
+Middleware
+(Authentication, Authorization, Validation)
+   │
+   ▼
+Controllers
+(Request Handling)
+   │
+   ▼
+Services
+(Business Logic)
+   │
+   ▼
+Access Control Layer
+(Role & Permission Validation)
+   │
+   ▼
+Database Layer
+(Mongoose Models)
+
+```
+
+### Architecture Principles
+
+- Controllers remain thin and only handle request/response.
+- Business logic is implemented inside service modules.
+- Access permissions are centralized using reusable access helper services.
+- Middleware is responsible for authentication, authorization, validation, and error handling.
+- Database operations are performed through Mongoose models.
+
+---
+
+# Folder Structure
+
+Backend
+
+```
+controllers/
+middleware/
+models/
+routes/
+services/
+  ├── access/
+  ├── dashboard/
+  ├── notification/
+  ├── project/
+  ├── submission/
+  ├── task/
+  └── user/
+utils/
+constants/
+validators/
+uploads/
+```
+
+Frontend
+
+```
+components/
+pages/
+services/
+hooks/
+context/
+layouts/
+routes/
+utils/
+assets/
+```
+
+---
+
+# API Architecture
+
+Routes
+↓
+Authentication Middleware
+↓
+Authorization Middleware
+↓
+Validation Middleware
+↓
+Controller
+↓
+Service
+↓
+Access Control
+↓
+Database
+
+---
+
+# Database Relationships
+
+User
+├── creates → Projects
+├── creates → Tasks
+├── reviews → Submissions
+└── receives → Notifications
+
+Project
+├── has many → Members
+└── has many → Tasks
+
+Task
+├── belongs to → Project (optional)
+├── assigned to → User
+├── has many → Activities
+└── has many → Submissions
+
+Submission
+└── belongs to → Task
+
+Notification
+└── belongs to → User
 
 ---
 
 # Future Enhancements
 
-- Email Notifications
-- Real-time Notifications using Socket.IO
-- Team Management
+- Role & Permission Management
+- Project Templates
+- Project Milestones
+- Kanban Board
+- Gantt Charts
+- Socket.IO Notifications
+- Email Notification
 - Calendar Integration
-- Task Comments
-- Recurring Tasks
 - Time Tracking
-- Reports & Analytics Export
+- Reports Export
+- Audit Logs
 - Dark Mode
-- Two-Factor Authentication (2FA)
-- Audit Dashboard
+- 2FA
 - Multi-language Support
 
 ---
