@@ -86,54 +86,56 @@ const getManagerDashboard = async (req, res) => {
       .lean(),
   );
 
-  let accessibleTaskFilter;
+  // let accessibleTaskFilter;
 
-  if (noProject) {
-    accessibleTaskFilter =
-      req.user.role === ROLES.ADMIN
-        ? {
-            project: null,
-          }
-        : {
-            project: null,
-            assignedBy: req.user.userId,
-          };
-  } else if (allProjects) {
-    accessibleTaskFilter =
-      req.user.role === ROLES.ADMIN
-        ? {
-            $or: [
-              {
-                project: {
-                  $in: projectIds,
-                },
-              },
-              {
-                project: null,
-              },
-            ],
-          }
-        : {
-            $or: [
-              {
-                project: {
-                  $in: projectIds,
-                },
-              },
-              {
-                project: null,
-                assignedBy: req.user.userId,
-              },
-            ],
-          };
-  } else {
-    accessibleTaskFilter = {
-      project: projectIds[0],
-    };
-  }
+  // if (noProject) {
+  //   accessibleTaskFilter =
+  //     req.user.role === ROLES.ADMIN
+  //       ? {
+  //           project: null,
+  //         }
+  //       : {
+  //           project: null,
+  //           assignedBy: req.user.userId,
+  //         };
+  // } else if (allProjects) {
+  //   accessibleTaskFilter =
+  //     req.user.role === ROLES.ADMIN
+  //       ? {
+  //           $or: [
+  //             {
+  //               project: {
+  //                 $in: projectIds,
+  //               },
+  //             },
+  //             {
+  //               project: null,
+  //             },
+  //           ],
+  //         }
+  //       : {
+  //           $or: [
+  //             {
+  //               project: {
+  //                 $in: projectIds,
+  //               },
+  //             },
+  //             {
+  //               project: null,
+  //               assignedBy: req.user.userId,
+  //             },
+  //           ],
+  //         };
+  // } else {
+  //   accessibleTaskFilter = {
+  //     project: projectIds[0],
+  //   };
+  // }
 
-  const accessibleTaskIds =
-    await Task.find(accessibleTaskFilter).distinct("_id");
+  // const accessibleTaskIds =
+  //   await Task.find(accessibleTaskFilter).distinct("_id");
+
+  const filteredTaskIds = await Task.find(projectFilter).distinct("_id");
 
   const [
     totalEmployees,
@@ -265,7 +267,7 @@ const getManagerDashboard = async (req, res) => {
     // ===========================================================
     Activity.find({
       task: {
-        $in: accessibleTaskIds,
+        $in: filteredTaskIds,
       },
     })
       .populate("performedBy", "name")
@@ -276,6 +278,10 @@ const getManagerDashboard = async (req, res) => {
   ]);
 
   const submissionFilter = await getSubmissionFilter(req.user);
+
+  submissionFilter.task = {
+    $in: filteredTaskIds,
+  };
 
   submissionFilter.status = SUBMISSION_STATUS.PENDING_REVIEW;
 
