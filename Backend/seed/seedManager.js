@@ -12,7 +12,7 @@ const seedManager = async () => {
     await connectDB();
 
     const existingManager = await User.findOne({
-      email: "manager2@example.com",
+      email: "manager@gmail.com",
     });
 
     if (existingManager) {
@@ -39,13 +39,13 @@ const seedManager = async () => {
       );
     }
 
-    const password = await bcrypt.hash("Manager2@123", 10);
+    const password = await bcrypt.hash("Manager@123", 10);
 
     await User.create({
       name: "Manager",
-      email: "manager2@example.com",
+      email: "manager@gmail.com",
       password,
-      employeeId: "EMP100",
+      employeeId: "MGR100",
       department: department._id,
       designation: designation._id,
       role: "manager",

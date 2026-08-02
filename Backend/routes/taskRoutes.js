@@ -35,25 +35,25 @@ const {
 router.post(
   "/",
   auth,
-  authorize("manager"),
+  authorize("manager", "admin"),
   uploadReference.array("referenceAttachments", 10),
   validateCreateTask,
   createTask,
 );
 
 // Get All Tasks
-router.get("/", auth, authorize("manager"), getAllTasks);
+router.get("/", auth, authorize("manager", "admin"), getAllTasks);
 
 // My Tasks for employee
 router.get("/my", auth, authorize("employee"), getMyTasks);
 
 // Get Task By ID
-router.get("/:id", auth, authorize("manager", "employee"), getTaskById);
+router.get("/:id", auth, authorize("manager", "admin", "employee"), getTaskById);
 
 router.get(
   "/:id/activities",
   auth,
-  authorize("manager", "employee"),
+  authorize("manager", "employee", "admin"),
   getTaskActivities,
 );
 
@@ -61,20 +61,20 @@ router.get(
 router.patch(
   "/:id",
   auth,
-  authorize("manager"),
+  authorize("manager", "admin"),
   uploadReference.array("referenceAttachments", 10),
   validateUpdateTask,
   updateTask,
 );
 
 // Withdraw Task
-router.patch("/:id/withdraw", auth, authorize("manager"), withdrawTask);
+router.patch("/:id/withdraw", auth, authorize("manager", "admin"), withdrawTask);
 
 // Reassign Task
-router.patch("/:id/reassign", auth, authorize("manager"), reassignTask);
+router.patch("/:id/reassign", auth, authorize("manager", "admin"), reassignTask);
 
 // Archive Task
-router.patch("/:id/archive", auth, authorize("manager"), toggleTaskArchive);
+router.patch("/:id/archive", auth, authorize("manager", "admin"), toggleTaskArchive);
 
 /* ===========================================================
                     EMPLOYEE ROUTES

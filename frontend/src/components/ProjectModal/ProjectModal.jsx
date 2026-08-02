@@ -3,7 +3,7 @@ import "./ProjectModal.css";
 
 import FormModal from "../FormModal/FormModal";
 import SearchableMultiSelect from "../SearchableMultiSelect/SearchableMultiSelect";
-import employeeService from "../../services/employeeService";
+import userService from "../../services/userService";
 
 import { useEffect, useState } from "react";
 
@@ -28,9 +28,7 @@ function ProjectModal({
     try {
       setLoadingEmployees(true);
 
-      const response = await employeeService.getEmployeeOptions();
-
-      console.log("Employee Options:", response);
+      const response = await userService.getUserOptions();
 
       setEmployees(response.data || []);
     } catch (error) {
@@ -47,7 +45,7 @@ function ProjectModal({
       setLoadingEmployees(true);
 
       try {
-        const response = await employeeService.getEmployeeOptions();
+        const response = await userService.getUserOptions();
         const employeeOptions = response.data || [];
 
         setEmployees(employeeOptions);

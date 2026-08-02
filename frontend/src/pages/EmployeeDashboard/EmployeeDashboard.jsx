@@ -27,6 +27,7 @@ function EmployeeDashboard() {
   const [loading, setLoading] = useState(true);
 
   const [dashboard, setDashboard] = useState(null);
+  const [selectedProject, setSelectedProject] = useState("");
 
   const user = JSON.parse(localStorage.getItem("user"));
 
@@ -34,7 +35,7 @@ function EmployeeDashboard() {
     try {
       setLoading(true);
 
-      const response = await dashboardService.getEmployeeDashboard();
+      const response = await dashboardService.getDashboard(selectedProject);
 
       setDashboard(response);
     } catch (error) {
@@ -46,7 +47,7 @@ function EmployeeDashboard() {
 
   useEffect(() => {
     fetchDashboard();
-  }, []);
+  }, [selectedProject]);
 
   if (loading) {
     return <Loader />;
@@ -129,13 +130,32 @@ function EmployeeDashboard() {
       {/* Welcome */}
 
       <section className="welcome-section">
-        <div>
-          <h1>
-            Welcome back,
-            <span> {user.name}</span>
-          </h1>
+        <div className="welcome-header">
+          <div>
+            <h1>
+              Welcome back,
+              <span> {user.name}</span>
+            </h1>
 
-          <p>Here's your task summary for today.</p>
+            <p>Here's your task summary for today.</p>
+          </div>
+
+          <div className="dashboard-filter">
+            <select
+              value={selectedProject}
+              onChange={(e) => setSelectedProject(e.target.value)}
+            >
+              <option value="">All Projects</option>
+
+              <option value="NO_PROJECT">No Project</option>
+
+              {dashboard?.projects?.map((project) => (
+                <option key={project._id} value={project._id}>
+                  {project.name}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
       </section>
 

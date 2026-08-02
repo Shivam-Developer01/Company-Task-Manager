@@ -2,6 +2,12 @@ const mongoose = require("mongoose");
 
 const ActivitySchema = new mongoose.Schema(
   {
+    project: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Project",
+      default: null,
+    },
+
     task: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Task",
@@ -32,12 +38,18 @@ const ActivitySchema = new mongoose.Schema(
 );
 
 ActivitySchema.index({
+  project: 1,
+  createdAt: -1,
+});
+
+ActivitySchema.index({
   task: 1,
   createdAt: -1,
 });
 
 ActivitySchema.index({
   performedBy: 1,
+  createdAt: -1,
 });
 
 module.exports = mongoose.model("Activity", ActivitySchema);

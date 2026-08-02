@@ -34,7 +34,7 @@ function Navbar({ setSidebarCollapsed, setMobileSidebarOpen }) {
   const handleClick = (role) => {
     if (role === "employee") {
       navigate(`/${role}/notifications`);
-    } else if (role === "manager") {
+    } else if (role === "manager" || role === "admin") {
       navigate("/notifications");
     }
   };

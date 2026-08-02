@@ -5,7 +5,7 @@ function PublicRoute({ children }) {
   const user = JSON.parse(localStorage.getItem("user"));
 
   if (token && user) {
-    if (user.role === "manager") {
+    if (user.role === "manager" || user.role === "admin") {
       return <Navigate to="/dashboard" replace />;
     }
 

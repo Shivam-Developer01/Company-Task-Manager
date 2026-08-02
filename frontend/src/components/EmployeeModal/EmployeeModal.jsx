@@ -12,6 +12,7 @@ function EmployeeModal({
   onSubmit,
   employee = null,
   loading = false,
+  currentUserRole,
 }) {
   const [formData, setFormData] = useState({
     name: "",
@@ -19,6 +20,7 @@ function EmployeeModal({
     employeeId: "",
     department: "",
     designation: "",
+    role: "employee",
   });
 
   const [departments, setDepartments] = useState([]);
@@ -30,6 +32,7 @@ function EmployeeModal({
     const loadDepartments = async () => {
       try {
         const response = await departmentService.getDepartments({
+          isActive: true,
           limit: 100,
         });
 
@@ -52,6 +55,7 @@ function EmployeeModal({
         employeeId: employee.employeeId || "",
         department: employee.department?._id || employee.department || "",
         designation: employee.designation?._id || employee.designation || "",
+        role: employee.role || "employee",
       });
     } else {
       setFormData({
@@ -60,6 +64,7 @@ function EmployeeModal({
         employeeId: "",
         department: "",
         designation: "",
+        role: "employee",
       });
 
       setDesignations([]);
@@ -76,6 +81,7 @@ function EmployeeModal({
       try {
         const response = await designationService.getDesignations({
           department: formData.department,
+          isActive: true,
           limit: 100,
         });
 
@@ -118,7 +124,7 @@ function EmployeeModal({
   return (
     <FormModal
       isOpen={isOpen}
-      title={employee ? "Edit Employee" : "Add Employee"}
+      title={employee ? "Edit User" : "Add User"}
       onClose={onClose}
       width="600px"
     >
@@ -158,6 +164,18 @@ function EmployeeModal({
               disabled={!!employee}
             />
           </div>
+
+          {currentUserRole === "admin" && !employee && (
+            <div className="form-group">
+              <label>Role</label>
+
+              <select name="role" value={formData.role} onChange={handleChange}>
+                <option value="admin">Admin</option>
+                <option value="manager">Manager</option>
+                <option value="employee">Employee</option>
+              </select>
+            </div>
+          )}
 
           <div className="form-group">
             <label>Department</label>
@@ -208,8 +226,8 @@ function EmployeeModal({
             {loading
               ? "Please Wait..."
               : employee
-                ? "Update Employee"
-                : "Create Employee"}
+                ? "Update User"
+                : "Create User"}
           </button>
         </div>
       </form>

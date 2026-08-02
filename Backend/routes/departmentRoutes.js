@@ -22,7 +22,7 @@ router.get("/:id", auth, getDepartmentById);
 router.post(
   "/",
   auth,
-  authorize("manager"),
+  authorize("manager", "admin"),
   validateDepartment,
   createDepartment,
 );
@@ -30,11 +30,11 @@ router.post(
 router.patch(
   "/:id",
   auth,
-  authorize("manager"),
+  authorize("manager", "admin"),
   validateDepartment,
   updateDepartment,
 );
 
-router.patch("/:id/status", auth, authorize("manager"), toggleDepartmentStatus);
+router.patch("/:id/status", auth, authorize("manager", "admin"), toggleDepartmentStatus);
 
 module.exports = router;

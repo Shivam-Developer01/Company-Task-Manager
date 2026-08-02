@@ -20,7 +20,7 @@ const getMyNotifications = async (req, res) => {
     query.isRead = false;
   }
 
-  if (search) {
+  if (search.trim()) {
     query.$or = [
       {
         title: {
@@ -37,28 +37,33 @@ const getMyNotifications = async (req, res) => {
     ];
   }
 
-  const skip = (Number(page) - 1) * Number(limit);
+  const pageNumber = Math.max(Number(page), 1);
+  const limitNumber = Math.min(Math.max(Number(limit), 1), 100);
+
+  const skip = (pageNumber - 1) * limitNumber;
 
   const notifications = await Notification.find(query)
     .populate("task", "title")
+    .populate("project", "name")
     .populate("submission", "submissionNumber")
     .sort({ createdAt: -1 })
     .skip(skip)
-    .limit(Number(limit));
+    .limit(limitNumber);
 
-  const totalNotifications = await Notification.countDocuments(query);
-
-  const unread = await Notification.countDocuments({
-    user: req.user.userId,
-    isRead: false,
-  });
+  const [totalNotifications, unread] = await Promise.all([
+    Notification.countDocuments(query),
+    Notification.countDocuments({
+      user: req.user.userId,
+      isRead: false,
+    }),
+  ]);
 
   res.status(200).json({
     success: true,
     unread,
     totalNotifications,
-    currentPage: Number(page),
-    totalPages: Math.ceil(totalNotifications / Number(limit)),
+    currentPage: pageNumber,
+    totalPages: Math.ceil(totalNotifications / limitNumber),
     count: notifications.length,
     data: notifications,
   });

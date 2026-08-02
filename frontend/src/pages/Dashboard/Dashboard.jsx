@@ -27,6 +27,8 @@ function Dashboard() {
   const [dashboard, setDashboard] = useState(null);
 
   const [dashboardData, setDashboardData] = useState(null);
+  const [selectedProject, setSelectedProject] = useState("");
+  const [managerPage, setManagerPage] = useState(0);
 
   const user = JSON.parse(localStorage.getItem("user"));
 
@@ -34,7 +36,7 @@ function Dashboard() {
     try {
       setLoading(true);
 
-      const response = await dashboardService.getDashboard();
+      const response = await dashboardService.getDashboard(selectedProject);
 
       setDashboardData(response);
 
@@ -48,96 +50,20 @@ function Dashboard() {
 
   useEffect(() => {
     fetchDashboard();
-  }, []);
+  }, [selectedProject]);
 
   if (loading) {
     return <Loader />;
   }
 
   const statistics = dashboard?.statistics || {};
-
-  const managerCards = [
-    {
-      title: "Employees",
-      value: statistics.employees?.total || 0,
-      color: "#2563eb",
-      icon: "👥",
-    },
-    {
-      title: "Projects",
-      value: statistics.projects?.active || 0,
-      color: "#8b5cf6",
-      icon: "📁",
-    },
-    {
-      title: "Assigned",
-      value: statistics.tasks?.assigned || 0,
-      color: "#f59e0b",
-      icon: "📌",
-    },
-    {
-      title: "In Progress",
-      value: statistics.tasks?.inProgress || 0,
-      color: "#0ea5e9",
-      icon: "⚡",
-    },
-    {
-      title: "Submitted",
-      value: statistics.tasks?.submitted || 0,
-      color: "#10b981",
-      icon: "📤",
-    },
-    {
-      title: "Closed",
-      value: statistics.tasks?.closed || 0,
-      color: "#ef4444",
-      icon: "✅",
-    },
-  ];
-
-  const employeeCards = [
-    {
-      title: "Assigned",
-      value: statistics.assigned || 0,
-      color: "#f59e0b",
-      icon: "📌",
-    },
-    {
-      title: "Accepted",
-      value: statistics.accepted || 0,
-      color: "#2563eb",
-      icon: "👍",
-    },
-    {
-      title: "In Progress",
-      value: statistics.inProgress || 0,
-      color: "#0ea5e9",
-      icon: "⚡",
-    },
-    {
-      title: "Submitted",
-      value: statistics.submitted || 0,
-      color: "#10b981",
-      icon: "📤",
-    },
-    {
-      title: "Closed",
-      value: statistics.closed || 0,
-      color: "#22c55e",
-      icon: "✅",
-    },
-    {
-      title: "Overdue",
-      value: statistics.overdue || 0,
-      color: "#ef4444",
-      icon: "⏰",
-    },
-  ];
-
-  const cards = user.role === "manager" ? managerCards : employeeCards;
+  const admin = dashboard?.admin || {};
+  const userOverview = admin.userOverview || {};
+  const projectOverview = admin.projectOverview || {};
+  const managerPerformance = admin.managerPerformance || [];
 
   const taskChartData =
-    user.role === "manager"
+    user.role === "manager" || user.role === "admin"
       ? [
           {
             name: "Assigned",
@@ -188,71 +114,227 @@ function Dashboard() {
   return (
     <div className="dashboard">
       <section className="welcome-section">
-        <div>
-          <h1>
-            Welcome back,
-            <span> {user.name}</span>
-          </h1>
+        <div className="welcome-header">
+          <div>
+            <h1>
+              Welcome back,
+              <span> {user.name}</span>
+            </h1>
 
-          <p>Here's what's happening in your workspace today.</p>
+            <p>Here's what's happening in your workspace today.</p>
+          </div>
+
+          <div className="dashboard-filter">
+            <label>Project</label>
+
+            <select
+              value={selectedProject}
+              onChange={(e) => setSelectedProject(e.target.value)}
+            >
+              <option value="">All Projects</option>
+
+              <option value="NO_PROJECT">No Project</option>
+
+              {(dashboard?.projects || []).map((project) => (
+                <option key={project._id} value={project._id}>
+                  {project.name}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
       </section>
+      {user.role === "manager" && (
+        <section className="stats-grid">
+          <div className="summary-card employees-card">
+            <div className="summary-header">
+              <h3>👥 Employees</h3>
+            </div>
 
-      <section className="stats-grid">
-        {user.role === "manager" ? (
-          <>
+            <div className="summary-body">
+              <div>
+                <span>Total</span>
+                <strong>{statistics.employees?.total || 0}</strong>
+              </div>
+
+              <div>
+                <span>Active</span>
+                <strong>{statistics.employees?.active || 0}</strong>
+              </div>
+
+              <div>
+                <span>Inactive</span>
+                <strong>{statistics.employees?.inactive || 0}</strong>
+              </div>
+            </div>
+          </div>
+
+          <div className="summary-card projects-card">
+            <div className="summary-header">
+              <h3>📁 Projects</h3>
+            </div>
+
+            <div className="summary-body">
+              <div>
+                <span>Total</span>
+                <strong>{statistics.projects?.total || 0}</strong>
+              </div>
+
+              <div>
+                <span>Active</span>
+                <strong>{statistics.projects?.active || 0}</strong>
+              </div>
+
+              <div>
+                <span>Archived</span>
+                <strong>
+                  {(statistics.projects?.total || 0) -
+                    (statistics.projects?.active || 0)}
+                </strong>
+              </div>
+            </div>
+          </div>
+
+          <div className="summary-card tasks-card">
+            <div className="summary-header">
+              <h3>📌 Tasks</h3>
+            </div>
+
+            <div className="summary-body">
+              <div>
+                <span>Assigned</span>
+                <strong>{statistics.tasks?.assigned || 0}</strong>
+              </div>
+
+              <div>
+                <span>Accepted</span>
+                <strong>{statistics.tasks?.accepted || 0}</strong>
+              </div>
+
+              <div>
+                <span>In Progress</span>
+                <strong>{statistics.tasks?.inProgress || 0}</strong>
+              </div>
+
+              <div>
+                <span>Submitted</span>
+                <strong>{statistics.tasks?.submitted || 0}</strong>
+              </div>
+
+              <div>
+                <span>Closed</span>
+                <strong>{statistics.tasks?.closed || 0}</strong>
+              </div>
+            </div>
+          </div>
+
+          <div className="summary-card overview-card">
+            <div className="summary-header">
+              <h3>📊 Overview</h3>
+            </div>
+
+            <div className="summary-body">
+              <div>
+                <span>Pending Reviews</span>
+                <strong>{statistics.pendingReviews || 0}</strong>
+              </div>
+
+              <div>
+                <span>Overdue Tasks</span>
+                <strong>{statistics.overdueTasks || 0}</strong>
+              </div>
+
+              <div>
+                <span>Completion</span>
+                <strong>
+                  {statistics.tasks?.closed || 0}/
+                  {(statistics.tasks?.assigned || 0) +
+                    (statistics.tasks?.accepted || 0) +
+                    (statistics.tasks?.inProgress || 0) +
+                    (statistics.tasks?.submitted || 0) +
+                    (statistics.tasks?.closed || 0)}
+                </strong>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+      {user.role === "admin" && admin.userOverview && (
+        <>
+          <section className="stats-grid">
             <div className="summary-card employees-card">
               <div className="summary-header">
-                <h3>👥 Employees</h3>
+                <h3>👥 User Overview</h3>
               </div>
 
               <div className="summary-body">
                 <div>
-                  <span>Total</span>
-                  <strong>{statistics.employees?.total || 0}</strong>
+                  <span>Total Users</span>
+                  <strong>{userOverview.totalUsers}</strong>
+                </div>
+
+                <div>
+                  <span>Admins</span>
+                  <strong>{userOverview.admins}</strong>
+                </div>
+
+                <div>
+                  <span>Managers</span>
+                  <strong>{userOverview.managers}</strong>
+                </div>
+
+                <div>
+                  <span>Employees</span>
+                  <strong>{userOverview.employees}</strong>
                 </div>
 
                 <div>
                   <span>Active</span>
-                  <strong>{statistics.employees?.active || 0}</strong>
+                  <strong>{userOverview.activeUsers}</strong>
                 </div>
 
                 <div>
                   <span>Inactive</span>
-                  <strong>{statistics.employees?.inactive || 0}</strong>
+                  <strong>{userOverview.inactiveUsers}</strong>
                 </div>
               </div>
             </div>
 
-            <div className="summary-card projects-card">
+            <div className="summary-card  projects-card">
               <div className="summary-header">
-                <h3>📁 Projects</h3>
+                <h3>📁 Company Projects</h3>
               </div>
 
               <div className="summary-body">
                 <div>
                   <span>Total</span>
-                  <strong>{statistics.projects?.total || 0}</strong>
+                  <strong>{projectOverview.totalProjects}</strong>
                 </div>
 
                 <div>
                   <span>Active</span>
-                  <strong>{statistics.projects?.active || 0}</strong>
+                  <strong>{projectOverview.activeProjects}</strong>
                 </div>
 
                 <div>
                   <span>Archived</span>
-                  <strong>
-                    {(statistics.projects?.total || 0) -
-                      (statistics.projects?.active || 0)}
-                  </strong>
+                  <strong>{projectOverview.archivedProjects}</strong>
+                </div>
+
+                <div>
+                  <span>Overdue</span>
+                  <strong>{projectOverview.overdueProjects}</strong>
+                </div>
+
+                <div>
+                  <span>Independent Tasks</span>
+                  <strong>{projectOverview.independentTasks}</strong>
                 </div>
               </div>
             </div>
-
             <div className="summary-card tasks-card">
               <div className="summary-header">
-                <h3>📌 Tasks</h3>
+                <h3>📌 Project Tasks</h3>
               </div>
 
               <div className="summary-body">
@@ -312,26 +394,58 @@ function Dashboard() {
                 </div>
               </div>
             </div>
-          </>
-        ) : (
-          cards.map((card) => (
-            <div
-              key={card.title}
-              className="stats-card"
-              style={{
-                borderTop: `5px solid ${card.color}`,
-              }}
-            >
-              <div className="card-header">
-                <span className="card-icon">{card.icon}</span>
-                <h4>{card.title}</h4>
-              </div>
+          </section>
 
-              <h2>{card.value}</h2>
+          <section className="chart-card manager-performance-card">
+            <div className="manager-performance-header">
+              <h3>👥 Manager Performance</h3>
+
+              {managerPerformance.length > 5 && (
+                <button
+                  className="view-more-btn"
+                  onClick={() =>
+                    setManagerPage((prev) =>
+                      prev + 1 >= Math.ceil(managerPerformance.length / 5)
+                        ? 0
+                        : prev + 1,
+                    )
+                  }
+                >
+                  View More →
+                </button>
+              )}
             </div>
-          ))
-        )}
-      </section>
+
+            <div className="table-wrapper">
+              <table className="manager-table">
+                <thead>
+                  <tr>
+                    <th>Manager</th>
+                    <th>Projects</th>
+                    <th>Assigned Tasks</th>
+                    <th>Overdue Tasks</th>
+                    <th>Pending Reviews</th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {managerPerformance
+                    .slice(managerPage * 5, managerPage * 5 + 5)
+                    .map((item) => (
+                      <tr key={item.manager._id}>
+                        <td>{item.manager.name}</td>
+                        <td>{item.projects}</td>
+                        <td>{item.activeTasks}</td>
+                        <td>{item.overdueTasks}</td>
+                        <td>{item.pendingReviews}</td>
+                      </tr>
+                    ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        </>
+      )}
 
       <section className="chart-section">
         <div className="chart-card">

@@ -37,6 +37,14 @@ const NotificationSchema = new mongoose.Schema(
         "Submission Received",
         "Submission Approved",
         "Submission Rejected",
+
+        // Project Notifications
+        "Project Created",
+        "Project Updated",
+        "Project Member Added",
+        "Project Member Removed",
+        "Project Archived",
+        "Project Restored",
       ],
       required: true,
     },
@@ -44,6 +52,12 @@ const NotificationSchema = new mongoose.Schema(
     task: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Task",
+      default: null,
+    },
+
+    project: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Project",
       default: null,
     },
 

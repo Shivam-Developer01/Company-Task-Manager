@@ -31,10 +31,10 @@ router.get("/my", auth, authorize("employee"), getMySubmissions);
 
 /* ================= MANAGER ================= */
 
-router.get("/", auth, authorize("manager"), getAllSubmissions);
+router.get("/", auth, authorize("manager", "admin"), getAllSubmissions);
 
-router.get("/:id", auth, authorize("manager", "employee"), getSubmissionById);
+router.get("/:id", auth, authorize("manager", "employee", "admin"), getSubmissionById);
 
-router.patch("/:id/review", auth, authorize("manager"), reviewSubmission);
+router.patch("/:id/review", auth, authorize("manager", "admin"), reviewSubmission);
 
 module.exports = router;

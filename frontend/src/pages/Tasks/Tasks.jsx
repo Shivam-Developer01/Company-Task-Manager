@@ -18,7 +18,7 @@ import Pagination from "../../components/Pagination/Pagination";
 import StatusBadge from "../../components/StatusBadge/StatusBadge";
 import ActionButtons from "../../components/ActionButtons/ActionButtons";
 import TaskModal from "../../components/TaskModal/TaskModal";
-import employeeService from "../../services/employeeService";
+import userService from "../../services/userService";
 import projectService from "../../services/projectService";
 import TaskDrawer from "../../components/TaskDrawer/TaskDrawer";
 import ConfirmationModal from "../../components/ConfirmationModal/ConfirmationModal";
@@ -83,6 +83,9 @@ function Tasks() {
     currentPage: 1,
     totalPages: 1,
   });
+
+  const currentUser = JSON.parse(localStorage.getItem("user"));
+  const currentUserRole = currentUser?.role;
 
   const handleView = useCallback(async (task) => {
     try {
@@ -168,9 +171,10 @@ function Tasks() {
 
   const fetchEmployees = async () => {
     try {
-      const response = await employeeService.getEmployees({
+      const response = await userService.getUsers({
         limit: 1000,
         isActive: true,
+        role: "employee",
       });
 
       setEmployees(response.data);
@@ -313,7 +317,7 @@ function Tasks() {
 
   useEffect(() => {
     fetchTasks();
-  }, [page, debouncedSearch, status, priority, project]);
+  }, [page, debouncedSearch, status, priority, project, archived]);
 
   useEffect(() => {
     fetchEmployees();
@@ -487,7 +491,7 @@ function Tasks() {
               setSearch(value);
             }}
             placeholder="Search tasks..."
-            filterValue={status}
+            filterValue={archived ? "__ARCHIVED__" : status}
             onFilterChange={(value) => {
               setPage(1);
 

@@ -6,6 +6,7 @@ const createNotification = async ({
   message,
   type,
   task = null,
+  project = null,
   submission = null,
 }) => {
   await Notification.create({
@@ -14,6 +15,7 @@ const createNotification = async ({
     message,
     type,
     task,
+    project,
     submission,
   });
 };

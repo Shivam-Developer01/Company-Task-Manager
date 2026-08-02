@@ -1,7 +1,8 @@
 const validator = require("validator");
+const { ROLES } = require("../constants/constants");
 
 const validateCreateEmployee = (req, res, next) => {
-  let { name, email, employeeId, department, designation } = req.body;
+  let { name, email, employeeId, department, designation, role } = req.body;
 
   if (!name || !email || !employeeId || !department || !designation) {
     return res.status(400).json({
@@ -36,6 +37,28 @@ const validateCreateEmployee = (req, res, next) => {
       success: false,
       message: "Employee ID must be between 3 and 20 characters",
     });
+  }
+
+  // Only Admin can choose role
+  if (req.user.role === ROLES.ADMIN) {
+    if (!role) {
+      return res.status(400).json({
+        success: false,
+        message: "Role is required",
+      });
+    }
+
+    if (![ROLES.ADMIN, ROLES.MANAGER, ROLES.EMPLOYEE].includes(role)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid role",
+      });
+    }
+
+    req.body.role = role;
+  } else {
+    // Manager always creates Employee
+    req.body.role = ROLES.EMPLOYEE;
   }
 
   req.body.name = validator.escape(name);

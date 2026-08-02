@@ -19,23 +19,23 @@ const {
   getAvailableEmployees,
 } = require("../controllers/projectController");
 
-router.post("/", auth, authorize("manager"), validateProject, createProject);
+router.post("/", auth, authorize("manager", "admin"), validateProject, createProject);
 
-router.get("/", auth, authorize("manager"), getAllProjects);
-router.get("/:id/members", auth, getProjectMembers);
-router.get("/:id/employees", auth, getAvailableEmployees);
-router.get("/:id", auth, authorize("manager"), getProjectById);
+router.get("/", auth, authorize("manager", "admin"), getAllProjects);
+router.get("/:id/members", auth, authorize("manager", "admin"), getProjectMembers);
+router.get("/:id/employees", auth, authorize("manager", "admin"), getAvailableEmployees);
+router.get("/:id", auth, authorize("manager", "admin"), getProjectById);
 
-router.patch("/:id/members", auth, authorize("manager"), updateProjectMembers);
+router.patch("/:id/members", auth, authorize("manager", "admin"), updateProjectMembers);
 
 router.patch(
   "/:id",
   auth,
-  authorize("manager"),
+  authorize("manager", "admin"),
   validateUpdateProject,
   updateProject,
 );
 
-router.patch("/:id/status", auth, authorize("manager"), toggleProjectStatus);
+router.patch("/:id/status", auth, authorize("manager", "admin"), toggleProjectStatus);
 
 module.exports = router;

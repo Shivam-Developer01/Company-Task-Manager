@@ -8,7 +8,7 @@ import { FiEye, FiEdit2, FiKey, FiUserX, FiUserCheck } from "react-icons/fi";
 
 import ActionButtons from "../../components/ActionButtons/ActionButtons";
 
-import employeeService from "../../services/employeeService";
+import userService from "../../services/userService";
 
 import AppSearchBar from "../../components/AppSearchBar/AppSearchBar";
 import formatDateTime from "../../utils/formatDateTime";
@@ -61,7 +61,12 @@ function Employees() {
 
   const [selectedEmployee, setSelectedEmployee] = useState(null);
 
-  const fetchEmployees = async () => {
+  const [roleFilter, setRoleFilter] = useState("");
+
+  const currentUser = JSON.parse(localStorage.getItem("user"));
+  const currentUserRole = currentUser?.role;
+
+  const fetchUsers = async () => {
     try {
       setLoading(true);
 
@@ -70,11 +75,15 @@ function Employees() {
         search: debouncedSearch,
       };
 
+      if (currentUserRole === "admin" && roleFilter) {
+        params.role = roleFilter;
+      }
+
       if (status !== "") {
         params.isActive = status;
       }
 
-      const response = await employeeService.getEmployees(params);
+      const response = await userService.getUsers(params);
 
       setEmployees(response.data);
 
@@ -90,26 +99,39 @@ function Employees() {
   };
 
   useEffect(() => {
-    fetchEmployees();
-  }, [page, debouncedSearch, status]);
+    fetchUsers();
+  }, [page, debouncedSearch, status, roleFilter]);
 
   const handleView = useCallback((employee) => {
     setSelectedEmployee(employee);
     setDrawerOpen(true);
   }, []);
 
-  const handleEdit = useCallback((employee) => {
-    setEditingEmployee(employee);
-    setModalOpen(true);
-  }, []);
+  const handleEdit = useCallback(
+    (employee) => {
+      if (employee.role === "admin" && employee._id !== currentUser._id) {
+        toast.error("You can't edit another Admin.");
+        return;
+      }
+
+      setEditingEmployee(employee);
+      setModalOpen(true);
+    },
+    [currentUser],
+  );
 
   const handleResetPassword = useCallback((employee) => {
+    if (employee.role === "admin") {
+      toast.error("Can't reset Admin password");
+      return;
+    }
+
     setSelectedEmployee(employee);
 
     setConfirmationConfig({
       title: "Reset Password?",
       message:
-        "A new temporary password will be generated. The employee must change it after logging in.",
+        "A new temporary password will be generated. The user must change it after logging in.",
       confirmText: "Reset Password",
       confirmType: "warning",
       action: "reset",
@@ -119,14 +141,21 @@ function Employees() {
   }, []);
 
   const handleStatus = useCallback((employee) => {
+    if (employee.role === "admin") {
+      toast.error(
+        employee.isActive ? "Can't deactivate Admin" : "Can't activate Admin",
+      );
+      return;
+    }
+
     setSelectedEmployee(employee);
 
     setConfirmationConfig({
-      title: employee.isActive ? "Deactivate Employee?" : "Activate Employee?",
+      title: employee.isActive ? "Deactivate User?" : "Activate User?",
 
       message: employee.isActive
-        ? "This employee will no longer be able to login until activated again."
-        : "This employee will be able to login again.",
+        ? "This user will no longer be able to login until activated again."
+        : "This user will be able to login again.",
 
       confirmText: employee.isActive ? "Deactivate" : "Activate",
 
@@ -141,9 +170,7 @@ function Employees() {
       setActionLoading(true);
 
       if (confirmationConfig.action === "reset") {
-        const response = await employeeService.resetPassword(
-          selectedEmployee._id,
-        );
+        const response = await userService.resetPassword(selectedEmployee._id);
 
         toast.success(response.message);
 
@@ -151,13 +178,11 @@ function Employees() {
 
         setCredentialModalOpen(true);
       } else {
-        const response = await employeeService.toggleStatus(
-          selectedEmployee._id,
-        );
+        const response = await userService.toggleStatus(selectedEmployee._id);
 
         toast.success(response.message);
 
-        await fetchEmployees();
+        await fetchUsers();
       }
 
       setConfirmationOpen(false);
@@ -176,7 +201,7 @@ function Employees() {
     () => [
       {
         key: "employeeId",
-        label: "Employee ID",
+        label: "User ID",
       },
 
       {
@@ -211,6 +236,7 @@ function Employees() {
       {
         key: "role",
         label: "Role",
+        render: (row) => row.role.charAt(0).toUpperCase() + row.role.slice(1),
       },
 
       {
@@ -259,7 +285,7 @@ function Employees() {
 
   const createEmployee = async (employee) => {
     try {
-      const response = await employeeService.createEmployee(employee);
+      const response = await userService.createUser(employee);
 
       toast.success(response.message);
 
@@ -269,7 +295,7 @@ function Employees() {
 
       setModalOpen(false);
 
-      await fetchEmployees();
+      await fetchUsers();
     } catch (error) {
       toast.error(
         error.response?.data?.message || "Failed to create employee.",
@@ -278,10 +304,20 @@ function Employees() {
   };
 
   const updateEmployee = async (employeeData) => {
+    // Prevent editing Admins from the frontend
+    // Prevent editing other Admins, but allow editing your own profile
+    if (
+      editingEmployee?.role === "admin" &&
+      editingEmployee?._id !== currentUser._id
+    ) {
+      toast.error("You can't edit another Admin.");
+      return;
+    }
+
     try {
       setModalLoading(true);
 
-      const response = await employeeService.updateEmployee(
+      const response = await userService.updateUser(
         editingEmployee._id,
         employeeData,
       );
@@ -289,16 +325,13 @@ function Employees() {
       toast.success(response.message);
 
       setModalOpen(false);
-
       setEditingEmployee(null);
 
-      await fetchEmployees();
+      await fetchUsers();
     } catch (error) {
-      toast.error(
-        error.response?.data?.message || "Failed to update employee.",
-      );
+      toast.error(error.response?.data?.message || "Failed to update user.");
     } finally {
-      // setModalLoading(false);
+      setModalLoading(false);
     }
   };
 
@@ -311,7 +344,7 @@ function Employees() {
             setPage(1);
             setSearch(value);
           }}
-          placeholder="Search employees..."
+          placeholder="Search users..."
           filterValue={status}
           onFilterChange={(value) => {
             setPage(1);
@@ -332,6 +365,21 @@ function Employees() {
             },
           ]}
         />
+        {currentUserRole === "admin" && (
+          <select
+            value={roleFilter}
+            onChange={(e) => {
+              setPage(1);
+              setRoleFilter(e.target.value);
+            }}
+            className="employee-filter"
+          >
+            <option value="">All Roles</option>
+            <option value="admin">Admin</option>
+            <option value="manager">Manager</option>
+            <option value="employee">Employee</option>
+          </select>
+        )}
 
         <button
           className="add-employee-btn"
@@ -340,7 +388,7 @@ function Employees() {
             setModalOpen(true);
           }}
         >
-          + Add Employee
+          + Add User
         </button>
       </div>
 
@@ -355,6 +403,7 @@ function Employees() {
         isOpen={modalOpen}
         employee={editingEmployee}
         loading={modalLoading}
+        currentUserRole={currentUserRole}
         onClose={() => {
           setModalOpen(false);
           setEditingEmployee(null);
@@ -364,7 +413,7 @@ function Employees() {
 
       <SideDrawer
         isOpen={drawerOpen}
-        title="Employee Details"
+        title="User Details"
         onClose={() => {
           setDrawerOpen(false);
           setSelectedEmployee(null);
@@ -388,7 +437,7 @@ function Employees() {
 
             <div className="employee-details">
               <div className="detail-item">
-                <label>Employee ID</label>
+                <label>User ID</label>
                 <span>{selectedEmployee.employeeId}</span>
               </div>
 
@@ -429,7 +478,7 @@ function Employees() {
                   }, 200);
                 }}
               >
-                Edit Employee
+                Edit User
               </button>
 
               <button
@@ -446,8 +495,8 @@ function Employees() {
                 onClick={() => handleStatus(selectedEmployee)}
               >
                 {selectedEmployee.isActive
-                  ? "Deactivate Employee"
-                  : "Activate Employee"}
+                  ? "Deactivate User"
+                  : "Activate User"}
               </button>
             </div>
           </>

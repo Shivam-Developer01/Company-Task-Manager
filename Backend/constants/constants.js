@@ -1,4 +1,5 @@
 const ROLES = {
+  ADMIN: "admin",
   MANAGER: "manager",
   EMPLOYEE: "employee",
 };
@@ -38,6 +39,13 @@ const NOTIFICATION_TYPE = {
   SUBMISSION_RECEIVED: "Submission Received",
   SUBMISSION_APPROVED: "Submission Approved",
   SUBMISSION_REJECTED: "Submission Rejected",
+
+  PROJECT_CREATED: "Project Created",
+  PROJECT_UPDATED: "Project Updated",
+  PROJECT_MEMBER_ADDED: "Project Member Added",
+  PROJECT_MEMBER_REMOVED: "Project Member Removed",
+  PROJECT_ARCHIVED: "Project Archived",
+  PROJECT_RESTORED: "Project Restored",
 };
 
 const FILE_UPLOAD = {

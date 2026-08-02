@@ -10,7 +10,7 @@ function ProtectedRoute({ children, allowedRoles = [] }) {
   }
 
   if (allowedRoles.length > 0 && !allowedRoles.includes(user.role)) {
-    if (user.role === "manager") {
+    if (user.role === "manager" || user.role === "admin") {
       return <Navigate to="/dashboard" replace />;
     }
 

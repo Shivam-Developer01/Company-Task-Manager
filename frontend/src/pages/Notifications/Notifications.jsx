@@ -154,6 +154,11 @@ function Notifications() {
         return;
       }
 
+      if (notification.project) {
+        navigate(`/projects?project=${notification.project._id}&action=view`);
+        return;
+      }
+
       if (notification.task) {
         if (role === "employee") {
           navigate(`/${role}/tasks?task=${notification.task._id}`);

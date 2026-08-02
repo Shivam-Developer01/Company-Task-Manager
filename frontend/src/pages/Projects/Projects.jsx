@@ -81,42 +81,9 @@ function Projects() {
     }
   };
 
-  useEffect(() => {
-    fetchProjects();
-  }, [page, debouncedSearch, status]);
-
-  useEffect(() => {
-    const action = searchParams.get("action");
-    const projectId = searchParams.get("project");
-
-    if (action !== "members" || !projectId || projects.length === 0) {
-      return;
-    }
-
-    const project = projects.find((p) => p._id === projectId);
-
-    if (!project) return;
-
-    setSelectedProject(project);
-
-    setProjectModalMode("members");
-
-    setEditingProject(project);
-
-    setModalOpen(true);
-
-    const params = new URLSearchParams(searchParams);
-
-    params.delete("action");
-
-    setSearchParams(params, { replace: true });
-  }, [projects]);
-
   const handleView = useCallback(async (project) => {
     try {
       const response = await projectService.getProject(project._id);
-
-      console.log(response.data);
 
       setSelectedProject(response.data);
 
@@ -125,6 +92,41 @@ function Projects() {
       toast.error(error.response?.data?.message || "Unable to load project.");
     }
   }, []);
+
+  useEffect(() => {
+    fetchProjects();
+  }, [page, debouncedSearch, status]);
+
+  useEffect(() => {
+    const action = searchParams.get("action");
+    const projectId = searchParams.get("project");
+
+    if (!projectId || projects.length === 0) {
+      return;
+    }
+
+    const project = projects.find((p) => p._id === projectId);
+
+    if (!project) return;
+
+    if (action === "members") {
+      setSelectedProject(project);
+      setProjectModalMode("members");
+      setEditingProject(project);
+      setModalOpen(true);
+    }
+
+    if (action === "view") {
+      handleView(project);
+    }
+
+    const params = new URLSearchParams(searchParams);
+
+    params.delete("action");
+    params.delete("project");
+
+    setSearchParams(params, { replace: true });
+  }, [projects, searchParams, setSearchParams, handleView]);
 
   const handleEdit = useCallback((project) => {
     setProjectModalMode("edit");
@@ -148,9 +150,17 @@ function Projects() {
     try {
       setModalLoading(true);
 
+      // Preserve existing managers
+      const managerIds =
+        selectedProject?.members
+          ?.filter((member) => member.role === "Manager")
+          .map((member) => member._id) || [];
+
       const response = await projectService.updateProjectMembers(
         editingProject._id,
-        data,
+        {
+          members: [...managerIds, ...data.members],
+        },
       );
 
       toast.success(response.message);
@@ -305,10 +315,23 @@ function Projects() {
     try {
       setModalLoading(true);
 
-      const response = await projectService.updateProject(
-        editingProject._id,
-        data,
-      );
+      let response;
+
+      if (projectModalMode === "members") {
+        response = await projectService.updateProjectMembers(
+          editingProject._id,
+          data,
+        );
+      } else {
+        response = await projectService.updateProject(editingProject._id, {
+          name: data.name,
+          description: data.description,
+        });
+
+        await projectService.updateProjectMembers(editingProject._id, {
+          members: data.members,
+        });
+      }
 
       toast.success(response.message);
 

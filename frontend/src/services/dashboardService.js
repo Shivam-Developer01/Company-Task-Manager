@@ -1,19 +1,20 @@
 import api from "../utils/axios";
 
 const dashboardService = {
-  getDashboard: async () => {
+  getDashboard: async (project = "") => {
     const user = JSON.parse(localStorage.getItem("user"));
 
-    const endpoint =
-      user.role === "manager" ? "/dashboard/manager" : "/dashboard/employee";
+    let endpoint = "/dashboard/employee";
 
-    const response = await api.get(endpoint);
+    if (user.role === "manager" || user.role === "admin") {
+      endpoint = "/dashboard/manager";
+    }
 
-    return response.data;
-  },
-
-  getEmployeeDashboard: async () => {
-    const response = await api.get("/dashboard/employee");
+    const response = await api.get(endpoint, {
+      params: {
+        project,
+      },
+    });
 
     return response.data;
   },

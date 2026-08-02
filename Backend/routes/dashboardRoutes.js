@@ -6,13 +6,16 @@ const auth = require("../middleware/auth");
 const authorize = require("../middleware/authorize");
 
 const {
+  getAdminDashboard,
   getManagerDashboard,
   getEmployeeDashboard,
   getProjectDashboard,
   getProjectAnalytics,
 } = require("../controllers/dashboardController");
 
-router.get("/manager", auth, authorize("manager"), getManagerDashboard);
+// router.get("/admin", auth, authorize("admin"), getAdminDashboard);
+
+router.get("/manager", auth, authorize("manager","admin"), getManagerDashboard);
 
 router.get("/employee", auth, authorize("employee"), getEmployeeDashboard);
 

@@ -22,7 +22,7 @@ router.get("/:id", auth, getDesignationById);
 router.post(
   "/",
   auth,
-  authorize("manager"),
+  authorize("manager", "admin"),
   validateDesignation,
   createDesignation,
 );
@@ -30,7 +30,7 @@ router.post(
 router.patch(
   "/:id",
   auth,
-  authorize("manager"),
+  authorize("manager", "admin"),
   validateDesignation,
   updateDesignation,
 );
@@ -38,7 +38,7 @@ router.patch(
 router.patch(
   "/:id/status",
   auth,
-  authorize("manager"),
+  authorize("manager", "admin"),
   toggleDesignationStatus,
 );
 

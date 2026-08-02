@@ -20,7 +20,7 @@ import "./Sidebar.css";
 function Sidebar({ collapsed, mobileOpen, setMobileOpen }) {
   const user = JSON.parse(localStorage.getItem("user"));
 
-  const isManager = user?.role === ROLES.MANAGER;
+  const isManager = user?.role === ROLES.MANAGER || user?.role === ROLES.ADMIN;
 
   const navClass = ({ isActive }) => (isActive ? "active" : "");
 
@@ -73,7 +73,7 @@ function Sidebar({ collapsed, mobileOpen, setMobileOpen }) {
                 onClick={() => setMobileOpen(false)}
               >
                 <FiUsers />
-                <span>Employees</span>
+                <span>Users</span>
               </NavLink>
 
               <NavLink

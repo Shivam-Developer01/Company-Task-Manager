@@ -3,75 +3,78 @@ const express = require("express");
 const router = express.Router();
 
 const {
-  createEmployee,
+  createUser,
   login,
   refreshAccessToken,
   logout,
-  getAllEmployees,
-  getEmployeeById,
-  updateEmployee,
-  toggleEmployeeStatus,
-  resetEmployeePassword,
+  getAllUsers,
+  getUserById,
+  updateUser,
+  toggleUserStatus,
+  resetUserPassword,
   changePassword,
   getMyProfile,
-  getEmployeeOptions,
+  getUserOptions,
 } = require("../controllers/authController");
 
 const auth = require("../middleware/auth");
 const authorize = require("../middleware/authorize");
 
 const validateLogin = require("../middleware/validateLogin");
-
 const validateCreateEmployee = require("../middleware/validateCreateEmployee");
 const validateUpdateEmployee = require("../middleware/validateUpdateEmployee");
 
-router.get("/employees", auth, authorize("manager"), getAllEmployees);
+/* ----------------------------- User Management ---------------------------- */
+
+router.get("/users", auth, authorize("admin", "manager"), getAllUsers);
 
 router.get(
-  "/employees/options",
+  "/users/options",
   auth,
-  authorize("manager"),
-  getEmployeeOptions,
+  authorize("admin", "manager"),
+  getUserOptions,
 );
 
-router.get("/employees/:id", auth, authorize("manager"), getEmployeeById);
+router.get("/users/:id", auth, authorize("admin", "manager"), getUserById);
+
+router.post(
+  "/users",
+  auth,
+  authorize("admin", "manager"),
+  validateCreateEmployee,
+  createUser,
+);
+
+router.patch(
+  "/users/:id",
+  auth,
+  authorize("admin", "manager"),
+  validateUpdateEmployee,
+  updateUser,
+);
+
+router.patch(
+  "/users/:id/status",
+  auth,
+  authorize("admin", "manager"),
+  toggleUserStatus,
+);
+
+router.patch(
+  "/users/:id/reset-password",
+  auth,
+  authorize("admin", "manager"),
+  resetUserPassword,
+);
+
+/* -------------------------------- Profile -------------------------------- */
 
 router.get("/me", auth, getMyProfile);
 
-router.patch(
-  "/employees/:id",
-  auth,
-  authorize("manager"),
-  validateUpdateEmployee,
-  updateEmployee,
-);
-
-router.patch(
-  "/employees/:id/status",
-  auth,
-  authorize("manager"),
-  toggleEmployeeStatus,
-);
-
-router.patch(
-  "/employees/:id/reset-password",
-  auth,
-  authorize("manager"),
-  resetEmployeePassword,
-);
-
 router.patch("/change-password", auth, changePassword);
 
-// Manager creates employee
-router.post(
-  "/employees",
-  auth,
-  authorize("manager"),
-  validateCreateEmployee,
-  createEmployee,
-);
+/* ----------------------------- Authentication ----------------------------- */
 
-// Login
 router.post("/login", validateLogin, login);
 
 router.post("/refresh-token", refreshAccessToken);
