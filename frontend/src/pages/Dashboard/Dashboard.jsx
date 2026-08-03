@@ -1,5 +1,8 @@
 import "./Dashboard.css";
 
+import ProjectMembersCard from "../../components/ProjectMembersCard/ProjectMembersCard";
+import ProjectTasksCard from "../../components/ProjectTasksCard/ProjectTasksCard";
+
 import { useEffect, useState } from "react";
 
 import {
@@ -31,6 +34,8 @@ function Dashboard() {
   const [managerPage, setManagerPage] = useState(0);
 
   const user = JSON.parse(localStorage.getItem("user"));
+
+  const isSingleProject = selectedProject && selectedProject !== "NO_PROJECT";
 
   const fetchDashboard = async () => {
     try {
@@ -395,100 +400,109 @@ function Dashboard() {
               </div>
             </div>
           </section>
+          {user.role === "admin" && admin.userOverview && !isSingleProject && (
+            <section className="chart-card manager-performance-card">
+              <div className="manager-performance-header">
+                <h3>👥 Manager Performance</h3>
 
-          <section className="chart-card manager-performance-card">
-            <div className="manager-performance-header">
-              <h3>👥 Manager Performance</h3>
+                {managerPerformance.length > 5 && (
+                  <button
+                    className="view-more-btn"
+                    onClick={() =>
+                      setManagerPage((prev) =>
+                        prev + 1 >= Math.ceil(managerPerformance.length / 5)
+                          ? 0
+                          : prev + 1,
+                      )
+                    }
+                  >
+                    View More →
+                  </button>
+                )}
+              </div>
 
-              {managerPerformance.length > 5 && (
-                <button
-                  className="view-more-btn"
-                  onClick={() =>
-                    setManagerPage((prev) =>
-                      prev + 1 >= Math.ceil(managerPerformance.length / 5)
-                        ? 0
-                        : prev + 1,
-                    )
-                  }
-                >
-                  View More →
-                </button>
-              )}
-            </div>
+              <div className="table-wrapper">
+                <table className="manager-table">
+                  <thead>
+                    <tr>
+                      <th>Manager</th>
+                      <th>Projects</th>
+                      <th>Assigned Tasks</th>
+                      <th>Overdue Tasks</th>
+                      <th>Pending Reviews</th>
+                    </tr>
+                  </thead>
 
-            <div className="table-wrapper">
-              <table className="manager-table">
-                <thead>
-                  <tr>
-                    <th>Manager</th>
-                    <th>Projects</th>
-                    <th>Assigned Tasks</th>
-                    <th>Overdue Tasks</th>
-                    <th>Pending Reviews</th>
-                  </tr>
-                </thead>
-
-                <tbody>
-                  {managerPerformance
-                    .slice(managerPage * 5, managerPage * 5 + 5)
-                    .map((item) => (
-                      <tr key={item.manager._id}>
-                        <td>{item.manager.name}</td>
-                        <td>{item.projects}</td>
-                        <td>{item.activeTasks}</td>
-                        <td>{item.overdueTasks}</td>
-                        <td>{item.pendingReviews}</td>
-                      </tr>
-                    ))}
-                </tbody>
-              </table>
-            </div>
-          </section>
+                  <tbody>
+                    {managerPerformance
+                      .slice(managerPage * 5, managerPage * 5 + 5)
+                      .map((item) => (
+                        <tr key={item.manager._id}>
+                          <td>{item.manager.name}</td>
+                          <td>{item.projects}</td>
+                          <td>{item.activeTasks}</td>
+                          <td>{item.overdueTasks}</td>
+                          <td>{item.pendingReviews}</td>
+                        </tr>
+                      ))}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          )}
         </>
       )}
 
-      <section className="chart-section">
-        <div className="chart-card">
-          <h3>Task Status Distribution</h3>
+      {!isSingleProject ? (
+        <section className="chart-section">
+          <div className="chart-card">
+            <h3>Task Status Distribution</h3>
 
-          <ResponsiveContainer width="100%" height={320}>
-            <PieChart>
-              <Pie
-                data={taskChartData}
-                dataKey="value"
-                nameKey="name"
-                outerRadius={110}
-              >
-                {taskChartData.map((entry, index) => (
-                  <Cell key={index} fill={COLORS[index % COLORS.length]} />
-                ))}
-              </Pie>
+            <ResponsiveContainer width="100%" height={320}>
+              <PieChart>
+                <Pie
+                  data={taskChartData}
+                  dataKey="value"
+                  nameKey="name"
+                  outerRadius={110}
+                >
+                  {taskChartData.map((entry, index) => (
+                    <Cell key={index} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
 
-              <Tooltip />
+                <Tooltip />
 
-              <Legend />
-            </PieChart>
-          </ResponsiveContainer>
-        </div>
+                <Legend />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
 
-        <div className="chart-card">
-          <h3>Task Overview</h3>
+          <div className="chart-card">
+            <h3>Task Overview</h3>
 
-          <ResponsiveContainer width="100%" height={320}>
-            <BarChart data={taskChartData}>
-              <CartesianGrid strokeDasharray="3 3" />
+            <ResponsiveContainer width="100%" height={320}>
+              <BarChart data={taskChartData}>
+                <CartesianGrid strokeDasharray="3 3" />
 
-              <XAxis dataKey="name" />
+                <XAxis dataKey="name" />
 
-              <YAxis />
+                <YAxis />
 
-              <Tooltip />
+                <Tooltip />
 
-              <Bar dataKey="value" fill="#2563eb" radius={[8, 8, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      </section>
+                <Bar dataKey="value" fill="#2563eb" radius={[8, 8, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </section>
+      ) : (
+        <>
+          <ProjectMembersCard members={dashboard?.projectMembers || []} />
+
+          <ProjectTasksCard tasks={dashboard?.projectTasks || []} />
+        </>
+      )}
 
       <section className="dashboard-bottom">
         <RecentActivitiesCard

@@ -1,0 +1,48 @@
+.project-members-card {
+  margin-bottom: 1.5rem;
+}
+
+.empty-row {
+  text-align: center;
+  padding: 1rem;
+  color: #888;
+}
+
+.project-members-table {
+  width: 100%;
+  border-collapse: collapse;
+  overflow: hidden;
+  border-radius: 12px;
+}
+
+.project-members-table thead {
+  background: linear-gradient(90deg, #f59e0b, #f6a820);
+}
+
+.project-members-table thead th {
+  padding: 16px;
+  text-align: left;
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+  letter-spacing: 0.5px;
+}
+
+.project-members-table tbody tr {
+  transition: 0.2s ease;
+}
+
+.project-members-table tbody tr:nth-child(even) {
+  background: #f8fbff;
+}
+
+.project-members-table tbody tr:hover {
+  background: #eef6ff;
+}
+
+.project-members-table td {
+  padding: 16px;
+  border-bottom: 1px solid #e5e7eb;
+  font-size: 15px;
+  color: #334155;
+}

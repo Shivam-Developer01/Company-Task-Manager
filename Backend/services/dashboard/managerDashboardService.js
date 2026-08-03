@@ -158,6 +158,8 @@ const getManagerDashboard = async (req, res) => {
     recentTasks,
     upcomingDeadlines,
     recentActivities,
+    projectInfo,
+    projectTasks,
   ] = await Promise.all([
     // ===========================================================
     // Employee Statistics
@@ -275,6 +277,26 @@ const getManagerDashboard = async (req, res) => {
       .populate("project", "name")
       .sort({ createdAt: -1 })
       .limit(5),
+
+    // ===========================================================
+    // Project Members
+    // ===========================================================
+    allProjects || noProject
+      ? Promise.resolve(null)
+      : Project.findById(projectIds[0]).populate("members", "name role").lean(),
+
+    // ===========================================================
+    // Project Tasks
+    // ===========================================================
+    allProjects || noProject
+      ? Promise.resolve([])
+      : Task.find({
+          project: projectIds[0],
+          isArchived: false,
+        })
+          .select("title status assignedTo")
+          .populate("assignedTo", "name")
+          .lean(),
   ]);
 
   const submissionFilter = await getSubmissionFilter(req.user);
@@ -292,6 +314,38 @@ const getManagerDashboard = async (req, res) => {
     .limit(5);
 
   const pendingReviewCount = await Submission.countDocuments(submissionFilter);
+
+  let projectMembers = [];
+
+  if (projectInfo) {
+    projectMembers = await Promise.all(
+      projectInfo.members.map(async (member) => {
+        let activeTasks = 0;
+
+        if (member.role === ROLES.EMPLOYEE) {
+          activeTasks = await Task.countDocuments({
+            project: projectIds[0],
+            assignedTo: member._id,
+            isArchived: false,
+            status: {
+              $in: [
+                TASK_STATUS.ASSIGNED,
+                TASK_STATUS.ACCEPTED,
+                TASK_STATUS.IN_PROGRESS,
+              ],
+            },
+          });
+        }
+
+        return {
+          _id: member._id,
+          name: member.name,
+          role: member.role,
+          activeTasks: member.role === ROLES.EMPLOYEE ? activeTasks : null,
+        };
+      }),
+    );
+  }
 
   let admin = null;
 
@@ -339,6 +393,10 @@ const getManagerDashboard = async (req, res) => {
     upcomingDeadlines,
 
     admin,
+
+    projectMembers,
+
+    projectTasks,
   });
 };
 
