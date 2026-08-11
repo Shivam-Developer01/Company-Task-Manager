@@ -95,7 +95,7 @@ function EmployeeTaskDrawer({
             <div className="task-info-d-grid">
               <div>
                 <label>Employee</label>
-                <span>{task.assignedTo?.name || "-"}</span>
+                <span>{task.assignedTo?.name || (typeof task.assignedTo === "string" ? "Assigned Employee" : "-")}</span>
               </div>
 
               {task.project?.name && (

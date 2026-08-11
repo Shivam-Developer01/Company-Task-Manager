@@ -6,6 +6,7 @@ import {
   FiBell,
   FiUser,
   FiX,
+  FiColumns,
 } from "react-icons/fi";
 
 import { ROUTES } from "../../constants/routes";
@@ -46,6 +47,11 @@ function EmployeeSidebar({ collapsed, mobileOpen, setMobileOpen }) {
           <NavLink to={ROUTES.EMPLOYEE_DASHBOARD}>
             <FiGrid />
             <span>Dashboard</span>
+          </NavLink>
+
+          <NavLink to={ROUTES.EMPLOYEE_KANBAN}>
+            <FiColumns />
+            <span>Kanban Board</span>
           </NavLink>
 
           <NavLink to={ROUTES.EMPLOYEE_TASKS}>

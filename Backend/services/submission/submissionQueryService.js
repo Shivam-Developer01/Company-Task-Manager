@@ -49,7 +49,7 @@ const getMySubmissions = async (req, res) => {
         { path: "phase", select: "name" },
       ],
     })
-    .populate("reviewedBy", "name")
+    .populate("reviewedBy", "name role")
     .sort({
       [sort]: order === "asc" ? 1 : -1,
     })
@@ -148,7 +148,7 @@ const getAllSubmissions = async (req, res) => {
       ],
     })
     .populate("submittedBy", "name employeeId")
-    .populate("reviewedBy", "name")
+    .populate("reviewedBy", "name role")
     .sort({
       [sort]: order === "asc" ? 1 : -1,
     })
@@ -196,7 +196,7 @@ const getSubmissionById = async (req, res) => {
   });
 
   await submission.populate("submittedBy", "name employeeId");
-  await submission.populate("reviewedBy", "name");
+  await submission.populate("reviewedBy", "name role");
 
   res.status(200).json({
     success: true,

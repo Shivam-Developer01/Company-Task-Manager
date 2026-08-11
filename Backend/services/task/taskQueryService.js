@@ -55,7 +55,11 @@ const getAllTasks = async (req, res) => {
   }
 
   if (project) {
-    query.project = project;
+    if (project === "NO_PROJECT") {
+      query.project = null;
+    } else {
+      query.project = project;
+    }
   }
 
   if (phase) {

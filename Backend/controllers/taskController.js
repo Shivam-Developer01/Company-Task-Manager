@@ -11,6 +11,7 @@ const {
 const {
   withdrawTask,
   reassignTask,
+  closeTask,
   toggleTaskArchive,
 } = require("../services/task/taskWorkflowService");
 
@@ -31,6 +32,7 @@ module.exports = {
 
   withdrawTask,
   reassignTask,
+  closeTask,
   toggleTaskArchive,
 
   getMyTasks,

@@ -10,6 +10,7 @@ import {
   FiX,
   FiBriefcase,
   FiAward,
+  FiColumns,
 } from "react-icons/fi";
 
 import { ROUTES } from "../../constants/routes";
@@ -104,6 +105,15 @@ function Sidebar({ collapsed, mobileOpen, setMobileOpen }) {
               </NavLink>
             </>
           )}
+
+          <NavLink
+            to={ROUTES.KANBAN}
+            className={navClass}
+            onClick={() => setMobileOpen(false)}
+          >
+            <FiColumns />
+            <span>Kanban</span>
+          </NavLink>
 
           <NavLink
             to={ROUTES.TASKS}

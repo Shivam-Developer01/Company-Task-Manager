@@ -6,6 +6,7 @@ import PublicRoute from "./routes/PublicRoute";
 import Dashboard from "./pages/Dashboard/Dashboard";
 import Employees from "./pages/Employees/Employees";
 import Projects from "./pages/Projects/Projects";
+import Kanban from "./pages/Kanban/Kanban";
 import Tasks from "./pages/Tasks/Tasks";
 import Submissions from "./pages/Submissions/Submissions";
 import Notifications from "./pages/Notifications/Notifications";
@@ -53,6 +54,8 @@ function App() {
 
         <Route path="/projects" element={<Projects />} />
 
+        <Route path="/kanban" element={<Kanban />} />
+
         <Route path="/tasks" element={<Tasks />} />
 
         <Route path="/submissions" element={<Submissions />} />
@@ -72,6 +75,8 @@ function App() {
         }
       >
         <Route path="/employee/dashboard" element={<EmployeeDashboard />} />
+
+        <Route path="/employee/kanban" element={<Kanban />} />
 
         <Route path="/employee/tasks" element={<MyTasks />} />
 

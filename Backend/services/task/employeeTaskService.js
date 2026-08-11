@@ -13,7 +13,7 @@ const { TASK_STATUS, NOTIFICATION_TYPE } = require("../../constants/constants");
 const { getAccessibleTask } = require("../access/taskAccess");
 
 const getMyTasks = async (req, res) => {
-  const { search, status, priority, page = 1, limit = 10 } = req.query;
+  const { search, status, priority, project, page = 1, limit = 10 } = req.query;
 
   const query = {
     assignedTo: req.user.userId,
@@ -45,12 +45,21 @@ const getMyTasks = async (req, res) => {
     query.priority = priority;
   }
 
+  if (project) {
+    if (project === "NO_PROJECT") {
+      query.project = null;
+    } else {
+      query.project = project;
+    }
+  }
+
   const skip = (Number(page) - 1) * Number(limit);
 
   const tasks = await Task.find(query)
+    .populate("assignedTo", "name employeeId")
+    .populate("assignedBy", "name")
     .populate("project", "name")
     .populate("phase", "name")
-    .populate("assignedBy", "name")
     .sort({
       dueDate: 1,
     })

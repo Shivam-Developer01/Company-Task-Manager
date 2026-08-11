@@ -6,7 +6,7 @@ const CustomError = require("../../errors/CustomError");
 const createActivity = require("../../utils/createActivity");
 const createNotification = require("../../utils/createNotification");
 
-const { TASK_STATUS, NOTIFICATION_TYPE } = require("../../constants/constants");
+const { TASK_STATUS, NOTIFICATION_TYPE, ROLES } = require("../../constants/constants");
 
 const { getProjectFilter } = require("../access/projectAccess");
 
@@ -72,8 +72,16 @@ const reassignTask = async (req, res) => {
     throw new CustomError("Task not found", 404);
   }
 
-  if (task.status !== TASK_STATUS.WITHDRAWN) {
-    throw new CustomError("Task must be withdrawn before reassignment.", 400);
+  const reassignableStatuses = [
+    TASK_STATUS.WITHDRAWN,
+    TASK_STATUS.TASK_REJECTED,
+  ];
+
+  if (!reassignableStatuses.includes(task.status)) {
+    throw new CustomError(
+      "Task must be withdrawn or rejected before reassignment.",
+      400,
+    );
   }
 
   const employee = await User.findOne({
@@ -141,6 +149,52 @@ const reassignTask = async (req, res) => {
   });
 };
 
+const closeTask = async (req, res) => {
+  const task = await getAccessibleTask(req.params.id, req.user);
+
+  if (!task) {
+    throw new CustomError("Task not found", 404);
+  }
+
+  const closableStatuses = [
+    TASK_STATUS.WITHDRAWN,
+    TASK_STATUS.TASK_REJECTED,
+  ];
+
+  if (!closableStatuses.includes(task.status)) {
+    throw new CustomError(
+      `Tasks with status "${task.status}" cannot be directly closed.`,
+      400,
+    );
+  }
+
+  task.status = TASK_STATUS.CLOSED;
+  task.completedAt = new Date();
+  task.updatedBy = req.user.userId;
+
+  await task.save();
+
+  await createActivity({
+    task: task._id,
+    action: "Task Closed",
+    performedBy: req.user.userId,
+  });
+
+  await createNotification({
+    user: task.assignedTo,
+    title: "Task Closed",
+    message: `Task "${task.title}" has been closed.`,
+    type: NOTIFICATION_TYPE.TASK_UPDATED,
+    task: task._id,
+  });
+
+  res.status(200).json({
+    success: true,
+    message: "Task closed successfully",
+    data: task,
+  });
+};
+
 const toggleTaskArchive = async (req, res) => {
   const task = await getAccessibleTask(req.params.id, req.user);
 
@@ -180,5 +234,6 @@ const toggleTaskArchive = async (req, res) => {
 module.exports = {
   withdrawTask,
   reassignTask,
+  closeTask,
   toggleTaskArchive,
 };

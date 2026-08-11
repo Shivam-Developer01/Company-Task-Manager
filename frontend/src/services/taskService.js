@@ -57,6 +57,11 @@ const taskService = {
     return response.data;
   },
 
+  closeTask: async (id) => {
+    const response = await api.patch(`/tasks/${id}/close`);
+    return response.data;
+  },
+
   archiveTask: async (id) => {
     const response = await api.patch(`/tasks/${id}/archive`);
     return response.data;

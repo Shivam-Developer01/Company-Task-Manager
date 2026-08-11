@@ -227,22 +227,34 @@ function SubmissionDrawer({ isOpen, submission, onClose }) {
             )}
           </div>
           {/* ===========================
-                Manager Feedback
+                Reviewer Feedback
           =========================== */}
           <div className="task-d-section">
-            <h4>Manager Feedback</h4>
+            <h4>
+              {submission.reviewedBy?.role === "admin"
+                ? "Admin Feedback"
+                : submission.reviewedBy?.role === "manager"
+                ? "Manager Feedback"
+                : "Reviewer Feedback"}
+            </h4>
 
             <p>
               {submission.status === "Pending Review"
                 ? "Submission is awaiting review."
                 : submission.managerFeedback?.trim()
                   ? submission.managerFeedback
-                  : "No feedback was provided by the manager."}
+                  : `No feedback was provided by the ${
+                      submission.reviewedBy?.role === "admin"
+                        ? "admin"
+                        : submission.reviewedBy?.role === "manager"
+                        ? "manager"
+                        : "reviewer"
+                    }.`}
             </p>
 
             {submission.reviewedAt && (
               <small className="review-date">
-                Reviewed on {formatDateTime(submission.reviewedAt)}
+                Reviewed {submission.reviewedBy?.name ? `by ${submission.reviewedBy.name}` : ""} on {formatDateTime(submission.reviewedAt)}
               </small>
             )}
           </div>

@@ -17,6 +17,7 @@ const {
 
   withdrawTask,
   reassignTask,
+  closeTask,
   toggleTaskArchive,
 
   getMyTasks,
@@ -72,6 +73,9 @@ router.patch("/:id/withdraw", auth, authorize("manager", "admin"), withdrawTask)
 
 // Reassign Task
 router.patch("/:id/reassign", auth, authorize("manager", "admin"), reassignTask);
+
+// Close Task
+router.patch("/:id/close", auth, authorize("manager", "admin"), closeTask);
 
 // Archive Task
 router.patch("/:id/archive", auth, authorize("manager", "admin"), toggleTaskArchive);
