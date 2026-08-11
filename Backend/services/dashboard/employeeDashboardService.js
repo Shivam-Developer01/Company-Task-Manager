@@ -3,22 +3,104 @@ const Submission = require("../../models/Submission");
 const Activity = require("../../models/Activity");
 
 const { TASK_STATUS, SUBMISSION_STATUS } = require("../../constants/constants");
-
 const { getDashboardScope } = require("./dashboardScopeService");
+const { getEmployeeMetrics } = require("../analytics/employeeAnalytics");
+
+const getEmployeeAttentionItems = async (userId, taskProjectFilter, overdueCount) => {
+  const items = [];
+
+  // Overdue tasks
+  if (overdueCount > 0) {
+    items.push({
+      type: "warning",
+      title: "Overdue Tasks",
+      message: `You have ${overdueCount} task(s) past their due date. Please complete or update your status.`,
+    });
+  }
+
+  // High priority active tasks
+  const highPriorityCount = await Task.countDocuments({
+    assignedTo: userId,
+    ...taskProjectFilter,
+    priority: "High",
+    isArchived: false,
+    status: {
+      $in: [TASK_STATUS.ASSIGNED, TASK_STATUS.ACCEPTED, TASK_STATUS.IN_PROGRESS],
+    },
+  });
+
+  if (highPriorityCount > 0) {
+    items.push({
+      type: "warning",
+      title: "High Priority Tasks",
+      message: `You have ${highPriorityCount} high-priority task(s) active in your queue.`,
+    });
+  }
+
+  // Tasks assigned awaiting acceptance
+  const assignedAwaitingAcceptance = await Task.countDocuments({
+    assignedTo: userId,
+    ...taskProjectFilter,
+    isArchived: false,
+    status: TASK_STATUS.ASSIGNED,
+  });
+
+  if (assignedAwaitingAcceptance > 0) {
+    items.push({
+      type: "info",
+      title: "Tasks Awaiting Acceptance",
+      message: `You have ${assignedAwaitingAcceptance} new task(s) assigned awaiting your acceptance.`,
+    });
+  }
+
+  // Rejected submissions requiring revision
+  const rejectedSubmissions = await Submission.countDocuments({
+    submittedBy: userId,
+    status: SUBMISSION_STATUS.REJECTED,
+  });
+
+  if (rejectedSubmissions > 0) {
+    items.push({
+      type: "info",
+      title: "Submission Feedback",
+      message: `You have ${rejectedSubmissions} rejected submission(s) requiring review and resubmission.`,
+    });
+  }
+
+  if (items.length === 0) {
+    items.push({
+      type: "success",
+      title: "All Caught Up",
+      message: "No urgent task alerts or overdue deadlines at this time.",
+    });
+  }
+
+  return items;
+};
 
 const getEmployeeDashboard = async (req, res) => {
   const today = new Date();
 
-  const { projectIds, projects, noProject } = await getDashboardScope(
+  const { projectIds, projects, noProject, allProjects } = await getDashboardScope(
     req.user,
     req.query.project,
   );
 
   const taskProjectFilter = noProject
     ? { project: null }
-    : projectIds.length
-      ? { project: { $in: projectIds } }
-      : {};
+    : allProjects
+      ? {}
+      : projectIds.length
+        ? { project: { $in: projectIds } }
+        : {};
+
+  const projectScopeParam = noProject
+    ? "NO_PROJECT"
+    : allProjects
+      ? null
+      : projectIds.length === 1
+        ? projectIds[0].toString()
+        : null;
 
   const [
     assigned,
@@ -30,6 +112,7 @@ const getEmployeeDashboard = async (req, res) => {
 
     myUpcomingTasks,
     myRecentActivities,
+    performanceMetrics,
   ] = await Promise.all([
     /* ===========================
        Statistics
@@ -109,18 +192,28 @@ const getEmployeeDashboard = async (req, res) => {
       .populate("task", "title")
       .sort({ createdAt: -1 })
       .limit(5),
+
+    /* ===========================
+       Performance Metrics (Phase 1)
+    =========================== */
+
+    getEmployeeMetrics(req.user.userId, projectScopeParam),
   ]);
+
+  const taskMatchFilter = noProject
+    ? { project: null }
+    : allProjects
+      ? {}
+      : projectIds.length
+        ? { project: { $in: projectIds } }
+        : {};
 
   const pendingReviewSubmissions = await Submission.find({
     submittedBy: req.user.userId,
     status: SUBMISSION_STATUS.PENDING_REVIEW,
   }).populate({
     path: "task",
-    match: noProject
-      ? { project: null }
-      : projectIds.length
-        ? { project: { $in: projectIds } }
-        : {},
+    match: taskMatchFilter,
     select: "_id",
   });
 
@@ -133,11 +226,7 @@ const getEmployeeDashboard = async (req, res) => {
   })
     .populate({
       path: "task",
-      match: noProject
-        ? { project: null }
-        : projectIds.length
-          ? { project: { $in: projectIds } }
-          : {},
+      match: taskMatchFilter,
       select: "title project",
     })
     .sort({ createdAt: -1 });
@@ -145,6 +234,12 @@ const getEmployeeDashboard = async (req, res) => {
   const myRecentSubmissions = submissions
     .filter((submission) => submission.task)
     .slice(0, 5);
+
+  const myAttentionItems = await getEmployeeAttentionItems(
+    req.user.userId,
+    taskProjectFilter,
+    overdue,
+  );
 
   res.status(200).json({
     success: true,
@@ -161,6 +256,9 @@ const getEmployeeDashboard = async (req, res) => {
       pendingReview,
     },
 
+    performanceMetrics,
+    myAttentionItems,
+
     myUpcomingTasks,
     myRecentSubmissions,
     myRecentActivities,
@@ -170,3 +268,4 @@ const getEmployeeDashboard = async (req, res) => {
 module.exports = {
   getEmployeeDashboard,
 };
+

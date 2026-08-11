@@ -181,6 +181,70 @@ function EmployeeDashboard() {
         ))}
       </section>
 
+      {/* Action Items / Personal Attention */}
+
+      {dashboard?.myAttentionItems && dashboard.myAttentionItems.length > 0 && (
+        <section className="attention-section">
+          <div className="attention-card">
+            <div className="attention-header">
+              <h3>⚡ Need Attention</h3>
+            </div>
+            <div className="attention-list">
+              {dashboard.myAttentionItems.map((item, idx) => (
+                <div
+                  key={idx}
+                  className={`attention-item attention-${item.type}`}
+                >
+                  <strong>{item.title}:</strong> {item.message}
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Personal Performance & Efficiency */}
+
+      {dashboard?.performanceMetrics && (
+        <section className="personal-performance-section">
+          <div className="summary-card overview-card">
+            <div className="summary-header">
+              <h3>📊 My Efficiency & Performance</h3>
+            </div>
+
+            <div className="summary-body performance-grid">
+              <div>
+                <span>Completion Rate</span>
+                <strong>{dashboard.performanceMetrics.completionRate}%</strong>
+              </div>
+
+              <div>
+                <span>Avg Completion Time</span>
+                <strong>
+                  {dashboard.performanceMetrics.averageCompletionTime !== null
+                    ? `${dashboard.performanceMetrics.averageCompletionTime} days`
+                    : "N/A"}
+                </strong>
+              </div>
+
+              <div>
+                <span>Avg Task Acceptance</span>
+                <strong>
+                  {dashboard.performanceMetrics.averageAcceptanceTime !== null
+                    ? `${dashboard.performanceMetrics.averageAcceptanceTime} days`
+                    : "N/A"}
+                </strong>
+              </div>
+
+              <div>
+                <span>Submission Rejection Rate</span>
+                <strong>{dashboard.performanceMetrics.rejectionRate}%</strong>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* Charts */}
 
       <section className="chart-section">

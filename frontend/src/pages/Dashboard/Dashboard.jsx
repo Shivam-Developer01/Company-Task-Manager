@@ -150,119 +150,192 @@ function Dashboard() {
         </div>
       </section>
       {user.role === "manager" && (
-        <section className="stats-grid">
-          <div className="summary-card employees-card">
-            <div className="summary-header">
-              <h3>👥 Employees</h3>
-            </div>
-
-            <div className="summary-body">
-              <div>
-                <span>Total</span>
-                <strong>{statistics.employees?.total || 0}</strong>
+        <>
+          <section className="stats-grid">
+            <div className="summary-card employees-card">
+              <div className="summary-header">
+                <h3>👥 Team Workforce</h3>
               </div>
 
-              <div>
-                <span>Active</span>
-                <strong>{statistics.employees?.active || 0}</strong>
-              </div>
+              <div className="summary-body">
+                <div>
+                  <span>Team Size</span>
+                  <strong>{dashboard?.teamMetrics?.teamSize || statistics.employees?.total || 0}</strong>
+                </div>
 
-              <div>
-                <span>Inactive</span>
-                <strong>{statistics.employees?.inactive || 0}</strong>
-              </div>
-            </div>
-          </div>
+                <div>
+                  <span>Active Employees</span>
+                  <strong>{statistics.employees?.active || 0}</strong>
+                </div>
 
-          <div className="summary-card projects-card">
-            <div className="summary-header">
-              <h3>📁 Projects</h3>
-            </div>
-
-            <div className="summary-body">
-              <div>
-                <span>Total</span>
-                <strong>{statistics.projects?.total || 0}</strong>
-              </div>
-
-              <div>
-                <span>Active</span>
-                <strong>{statistics.projects?.active || 0}</strong>
-              </div>
-
-              <div>
-                <span>Archived</span>
-                <strong>
-                  {(statistics.projects?.total || 0) -
-                    (statistics.projects?.active || 0)}
-                </strong>
+                <div>
+                  <span>Inactive Employees</span>
+                  <strong>{statistics.employees?.inactive || 0}</strong>
+                </div>
               </div>
             </div>
-          </div>
 
-          <div className="summary-card tasks-card">
-            <div className="summary-header">
-              <h3>📌 Tasks</h3>
-            </div>
-
-            <div className="summary-body">
-              <div>
-                <span>Assigned</span>
-                <strong>{statistics.tasks?.assigned || 0}</strong>
+            <div className="summary-card projects-card">
+              <div className="summary-header">
+                <h3>📁 Managed Projects</h3>
               </div>
 
-              <div>
-                <span>Accepted</span>
-                <strong>{statistics.tasks?.accepted || 0}</strong>
-              </div>
+              <div className="summary-body">
+                <div>
+                  <span>Total Projects</span>
+                  <strong>{statistics.projects?.total || 0}</strong>
+                </div>
 
-              <div>
-                <span>In Progress</span>
-                <strong>{statistics.tasks?.inProgress || 0}</strong>
-              </div>
+                <div>
+                  <span>Active Projects</span>
+                  <strong>{statistics.projects?.active || 0}</strong>
+                </div>
 
-              <div>
-                <span>Submitted</span>
-                <strong>{statistics.tasks?.submitted || 0}</strong>
-              </div>
-
-              <div>
-                <span>Closed</span>
-                <strong>{statistics.tasks?.closed || 0}</strong>
+                <div>
+                  <span>Archived Projects</span>
+                  <strong>
+                    {(statistics.projects?.total || 0) -
+                      (statistics.projects?.active || 0)}
+                  </strong>
+                </div>
               </div>
             </div>
-          </div>
 
-          <div className="summary-card overview-card">
-            <div className="summary-header">
-              <h3>📊 Overview</h3>
+            <div className="summary-card tasks-card">
+              <div className="summary-header">
+                <h3>📌 Team Tasks</h3>
+              </div>
+
+              <div className="summary-body">
+                <div>
+                  <span>Assigned</span>
+                  <strong>{statistics.tasks?.assigned || 0}</strong>
+                </div>
+
+                <div>
+                  <span>Accepted</span>
+                  <strong>{statistics.tasks?.accepted || 0}</strong>
+                </div>
+
+                <div>
+                  <span>In Progress</span>
+                  <strong>{statistics.tasks?.inProgress || 0}</strong>
+                </div>
+
+                <div>
+                  <span>Submitted</span>
+                  <strong>{statistics.tasks?.submitted || 0}</strong>
+                </div>
+
+                <div>
+                  <span>Closed</span>
+                  <strong>{statistics.tasks?.closed || 0}</strong>
+                </div>
+              </div>
             </div>
 
-            <div className="summary-body">
-              <div>
-                <span>Pending Reviews</span>
-                <strong>{statistics.pendingReviews || 0}</strong>
+            <div className="summary-card overview-card">
+              <div className="summary-header">
+                <h3>📊 Operational Status</h3>
               </div>
 
-              <div>
-                <span>Overdue Tasks</span>
-                <strong>{statistics.overdueTasks || 0}</strong>
-              </div>
+              <div className="summary-body">
+                <div>
+                  <span>Team Completion</span>
+                  <strong>
+                    {dashboard?.teamMetrics?.teamTaskCompletion !== undefined
+                      ? `${dashboard.teamMetrics.teamTaskCompletion}%`
+                      : "0%"}
+                  </strong>
+                </div>
 
-              <div>
-                <span>Completion</span>
-                <strong>
-                  {statistics.tasks?.closed || 0}/
-                  {(statistics.tasks?.assigned || 0) +
-                    (statistics.tasks?.accepted || 0) +
-                    (statistics.tasks?.inProgress || 0) +
-                    (statistics.tasks?.submitted || 0) +
-                    (statistics.tasks?.closed || 0)}
-                </strong>
+                <div>
+                  <span>Pending Reviews</span>
+                  <strong>{statistics.pendingReviews || 0}</strong>
+                </div>
+
+                <div>
+                  <span>Overdue Tasks</span>
+                  <strong>{statistics.overdueTasks || 0}</strong>
+                </div>
               </div>
             </div>
-          </div>
-        </section>
+          </section>
+
+          {dashboard?.managerAttention &&
+            dashboard.managerAttention.length > 0 && (
+              <section className="attention-section">
+                <div className="attention-card">
+                  <div className="attention-header">
+                    <h3>⚡ Action Items</h3>
+                  </div>
+                  <div className="attention-list">
+                    {dashboard.managerAttention.map((item, idx) => (
+                      <div
+                        key={idx}
+                        className={`attention-item attention-${item.type}`}
+                      >
+                        <strong>{item.title}:</strong> {item.message}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </section>
+            )}
+
+          {dashboard?.teamMetrics?.teamWorkloadDistribution?.length > 0 &&
+            !isSingleProject && (
+              <section className="chart-card team-workload-card">
+                <div className="manager-performance-header">
+                  <h3>👥 Team Workload & Distribution</h3>
+                </div>
+
+                <div className="table-wrapper">
+                  <table className="manager-table">
+                    <thead>
+                      <tr>
+                        <th>Employee</th>
+                        <th>Active Tasks</th>
+                        <th>Completed Tasks</th>
+                        <th>Overdue Tasks</th>
+                        <th>Total Assigned</th>
+                      </tr>
+                    </thead>
+
+                    <tbody>
+                      {dashboard.teamMetrics.teamWorkloadDistribution.map(
+                        (emp) => (
+                          <tr key={emp.employeeId}>
+                            <td className="manager-name">
+                              {emp.employeeName} ({emp.employeeCode})
+                            </td>
+                            <td>
+                              <span className="badge tasks">
+                                {emp.activeTasks}
+                              </span>
+                            </td>
+                            <td>{emp.completedTasks}</td>
+                            <td>
+                              <span
+                                className={
+                                  emp.overdueTasks > 0
+                                    ? "badge warning-badge"
+                                    : ""
+                                }
+                              >
+                                {emp.overdueTasks}
+                              </span>
+                            </td>
+                            <td>{emp.totalTasks}</td>
+                          </tr>
+                        ),
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </section>
+            )}
+        </>
       )}
       {user.role === "admin" && admin.userOverview && (
         <>
@@ -305,7 +378,7 @@ function Dashboard() {
               </div>
             </div>
 
-            <div className="summary-card  projects-card">
+            <div className="summary-card projects-card">
               <div className="summary-header">
                 <h3>📁 Company Projects</h3>
               </div>
@@ -337,9 +410,10 @@ function Dashboard() {
                 </div>
               </div>
             </div>
+
             <div className="summary-card tasks-card">
               <div className="summary-header">
-                <h3>📌 Project Tasks</h3>
+                <h3>📌 Company Tasks</h3>
               </div>
 
               <div className="summary-body">
@@ -372,10 +446,30 @@ function Dashboard() {
 
             <div className="summary-card overview-card">
               <div className="summary-header">
-                <h3>📊 Overview</h3>
+                <h3>📊 Performance</h3>
               </div>
 
               <div className="summary-body">
+                <div>
+                  <span>Completion Rate</span>
+                  <strong>
+                    {admin.companyMetrics?.tasks?.taskCompletionRate !== undefined
+                      ? `${admin.companyMetrics.tasks.taskCompletionRate}%`
+                      : `${Math.round(
+                          ((statistics.tasks?.closed || 0) /
+                            Math.max(
+                              1,
+                              (statistics.tasks?.assigned || 0) +
+                                (statistics.tasks?.accepted || 0) +
+                                (statistics.tasks?.inProgress || 0) +
+                                (statistics.tasks?.submitted || 0) +
+                                (statistics.tasks?.closed || 0),
+                            )) *
+                            100,
+                        )}%`}
+                  </strong>
+                </div>
+
                 <div>
                   <span>Pending Reviews</span>
                   <strong>{statistics.pendingReviews || 0}</strong>
@@ -387,19 +481,48 @@ function Dashboard() {
                 </div>
 
                 <div>
-                  <span>Completion</span>
-                  <strong>
-                    {statistics.tasks?.closed || 0}/
-                    {(statistics.tasks?.assigned || 0) +
-                      (statistics.tasks?.accepted || 0) +
-                      (statistics.tasks?.inProgress || 0) +
-                      (statistics.tasks?.submitted || 0) +
-                      (statistics.tasks?.closed || 0)}
-                  </strong>
+                  <span>Closed Tasks</span>
+                  <strong>{statistics.tasks?.closed || 0}</strong>
                 </div>
               </div>
             </div>
           </section>
+
+          {admin.attentionItems && admin.attentionItems.length > 0 && (
+            <section className="attention-section">
+              <div className="attention-card">
+                <div className="attention-header">
+                  <h3>⚠️ Items Requiring Attention</h3>
+                </div>
+                <div className="attention-list">
+                  {admin.attentionItems.map((item, idx) => (
+                    <div
+                      key={idx}
+                      className={`attention-item attention-${item.type}`}
+                    >
+                      <strong>{item.title}:</strong> {item.message}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </section>
+          )}
+
+          {admin.insights && admin.insights.length > 0 && (
+            <section className="insights-section">
+              <div className="insights-card">
+                <div className="insights-header">
+                  <h3>💡 Operational Insights</h3>
+                </div>
+                <ul className="insights-list">
+                  {admin.insights.map((insight, idx) => (
+                    <li key={idx}>{insight}</li>
+                  ))}
+                </ul>
+              </div>
+            </section>
+          )}
+
           {user.role === "admin" && admin.userOverview && !isSingleProject && (
             <section className="chart-card manager-performance-card">
               <div className="manager-performance-header">
@@ -427,7 +550,7 @@ function Dashboard() {
                     <tr>
                       <th>Manager</th>
                       <th>Projects</th>
-                      <th>Assigned Tasks</th>
+                      <th>Active Tasks</th>
                       <th>Overdue Tasks</th>
                       <th>Pending Reviews</th>
                     </tr>
@@ -438,11 +561,19 @@ function Dashboard() {
                       .slice(managerPage * 5, managerPage * 5 + 5)
                       .map((item) => (
                         <tr key={item.manager._id}>
-                          <td>{item.manager.name}</td>
-                          <td>{item.projects}</td>
-                          <td>{item.activeTasks}</td>
+                          <td className="manager-name">{item.manager.name}</td>
+                          <td>
+                            <span className="badge projects">{item.projects}</span>
+                          </td>
+                          <td>
+                            <span className="badge tasks">{item.activeTasks}</span>
+                          </td>
                           <td>{item.overdueTasks}</td>
-                          <td>{item.pendingReviews}</td>
+                          <td>
+                            <span className="badge reviews">
+                              {item.pendingReviews}
+                            </span>
+                          </td>
                         </tr>
                       ))}
                   </tbody>

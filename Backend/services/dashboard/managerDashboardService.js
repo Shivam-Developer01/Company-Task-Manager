@@ -14,23 +14,67 @@ const {
 const { getDashboardScope } = require("./dashboardScopeService");
 
 const { getAdminDashboardOverview } = require("./adminDashboardOverview");
+const { getManagerTeamMetrics } = require("../analytics/managerAnalytics");
+
+const getManagerAttentionItems = (
+  teamMetrics,
+  overdueTasks,
+  pendingReviewCount,
+  rejectedTaskCount = 0,
+) => {
+  const items = [];
+
+  if (pendingReviewCount > 0) {
+    items.push({
+      type: "info",
+      title: "Pending Submissions",
+      message: `${pendingReviewCount} task submission(s) are awaiting your review.`,
+    });
+  }
+
+  if (overdueTasks > 0) {
+    items.push({
+      type: "warning",
+      title: "Overdue Tasks",
+      message: `${overdueTasks} task(s) in your scope are currently past their due date.`,
+    });
+  }
+
+  if (rejectedTaskCount > 0) {
+    items.push({
+      type: "warning",
+      title: "Task Rejections",
+      message: `${rejectedTaskCount} task assignment(s) were rejected by team members and require reassignment.`,
+    });
+  }
+
+  const overloaded = (teamMetrics?.teamWorkloadDistribution || []).filter(
+    (e) => e.activeTasks >= 5,
+  );
+  if (overloaded.length > 0) {
+    items.push({
+      type: "warning",
+      title: "High Workload Alert",
+      message: `${overloaded.length} team member(s) have 5 or more active tasks assigned.`,
+    });
+  }
+
+  if (items.length === 0) {
+    items.push({
+      type: "success",
+      title: "All Clear",
+      message: "No immediate bottlenecks or overdue items requiring action in this scope.",
+    });
+  }
+
+  return items;
+};
 
 const getManagerDashboard = async (req, res) => {
   const today = new Date();
 
   const { projectIds, projects, noProject, allProjects } =
     await getDashboardScope(req.user, req.query.project);
-
-  console.log("Logged In Manager:", req.user.userId);
-
-  console.log(
-    "Accessible Projects:",
-    await Project.find({
-      _id: { $in: projectIds },
-    })
-      .select("name createdBy members")
-      .lean(),
-  );
 
   let projectFilter;
 
@@ -47,18 +91,7 @@ const getManagerDashboard = async (req, res) => {
   } else if (allProjects) {
     projectFilter =
       req.user.role === ROLES.ADMIN
-        ? {
-            $or: [
-              {
-                project: {
-                  $in: projectIds,
-                },
-              },
-              {
-                project: null,
-              },
-            ],
-          }
+        ? {}
         : {
             $or: [
               {
@@ -70,6 +103,9 @@ const getManagerDashboard = async (req, res) => {
                 project: null,
                 assignedBy: req.user.userId,
               },
+              {
+                assignedTo: req.user.userId,
+              },
             ],
           };
   } else {
@@ -77,63 +113,6 @@ const getManagerDashboard = async (req, res) => {
       project: projectIds[0],
     };
   }
-
-  console.log(
-    "Recent Tasks:",
-    await Task.find(projectFilter)
-      .populate("project", "name")
-      .select("title project assignedBy")
-      .lean(),
-  );
-
-  // let accessibleTaskFilter;
-
-  // if (noProject) {
-  //   accessibleTaskFilter =
-  //     req.user.role === ROLES.ADMIN
-  //       ? {
-  //           project: null,
-  //         }
-  //       : {
-  //           project: null,
-  //           assignedBy: req.user.userId,
-  //         };
-  // } else if (allProjects) {
-  //   accessibleTaskFilter =
-  //     req.user.role === ROLES.ADMIN
-  //       ? {
-  //           $or: [
-  //             {
-  //               project: {
-  //                 $in: projectIds,
-  //               },
-  //             },
-  //             {
-  //               project: null,
-  //             },
-  //           ],
-  //         }
-  //       : {
-  //           $or: [
-  //             {
-  //               project: {
-  //                 $in: projectIds,
-  //               },
-  //             },
-  //             {
-  //               project: null,
-  //               assignedBy: req.user.userId,
-  //             },
-  //           ],
-  //         };
-  // } else {
-  //   accessibleTaskFilter = {
-  //     project: projectIds[0],
-  //   };
-  // }
-
-  // const accessibleTaskIds =
-  //   await Task.find(accessibleTaskFilter).distinct("_id");
 
   const filteredTaskIds = await Task.find(projectFilter).distinct("_id");
 
@@ -160,6 +139,7 @@ const getManagerDashboard = async (req, res) => {
     recentActivities,
     projectInfo,
     projectTasks,
+    teamMetrics,
   ] = await Promise.all([
     // ===========================================================
     // Employee Statistics
@@ -297,6 +277,11 @@ const getManagerDashboard = async (req, res) => {
           .select("title status assignedTo")
           .populate("assignedTo", "name")
           .lean(),
+
+    // ===========================================================
+    // Manager Team Metrics
+    // ===========================================================
+    getManagerTeamMetrics(req.user, projectFilter),
   ]);
 
   const submissionFilter = await getSubmissionFilter(req.user);
@@ -314,6 +299,13 @@ const getManagerDashboard = async (req, res) => {
     .limit(5);
 
   const pendingReviewCount = await Submission.countDocuments(submissionFilter);
+
+  const rejectedTaskCount = await Task.countDocuments({
+    ...projectFilter,
+    status: {
+      $in: [TASK_STATUS.TASK_REJECTED, TASK_STATUS.ASSIGNMENT_REJECTED],
+    },
+  });
 
   let projectMembers = [];
 
@@ -350,8 +342,15 @@ const getManagerDashboard = async (req, res) => {
   let admin = null;
 
   if (req.user.role === ROLES.ADMIN) {
-    admin = await getAdminDashboardOverview();
+    admin = await getAdminDashboardOverview(projectFilter, !allProjects);
   }
+
+  const managerAttention = getManagerAttentionItems(
+    teamMetrics,
+    overdueTasks,
+    pendingReviewCount,
+    rejectedTaskCount,
+  );
 
   res.status(200).json({
     success: true,
@@ -393,6 +392,10 @@ const getManagerDashboard = async (req, res) => {
     upcomingDeadlines,
 
     admin,
+
+    teamMetrics,
+
+    managerAttention,
 
     projectMembers,
 

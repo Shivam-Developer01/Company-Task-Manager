@@ -16,6 +16,7 @@ const dashboardRoutes = require("./routes/dashboardRoutes");
 const notificationRoutes = require("./routes/notificationRoutes");
 const departmentRoutes = require("./routes/departmentRoutes");
 const designationRoutes = require("./routes/designationRoutes");
+const analyticsRoutes = require("./routes/analyticsRoutes");
 
 const errorHandler = require("./middleware/errorHandler");
 
@@ -43,6 +44,7 @@ app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/departments", departmentRoutes);
 app.use("/api/designations", designationRoutes);
+app.use("/api/analytics", analyticsRoutes);
 
 app.use(errorHandler);
 
