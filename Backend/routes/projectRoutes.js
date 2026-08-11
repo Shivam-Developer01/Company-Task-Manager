@@ -14,6 +14,9 @@ const {
   getProjectById,
   updateProject,
   toggleProjectStatus,
+  addProjectPhase,
+  updateProjectPhase,
+  deleteProjectPhase,
   updateProjectMembers,
   getProjectMembers,
   getAvailableEmployees,
@@ -25,6 +28,10 @@ router.get("/", auth, authorize("manager", "admin"), getAllProjects);
 router.get("/:id/members", auth, authorize("manager", "admin"), getProjectMembers);
 router.get("/:id/employees", auth, authorize("manager", "admin"), getAvailableEmployees);
 router.get("/:id", auth, authorize("manager", "admin"), getProjectById);
+
+router.post("/:id/phases", auth, authorize("manager", "admin"), addProjectPhase);
+router.patch("/:id/phases/:phaseId", auth, authorize("manager", "admin"), updateProjectPhase);
+router.delete("/:id/phases/:phaseId", auth, authorize("manager", "admin"), deleteProjectPhase);
 
 router.patch("/:id/members", auth, authorize("manager", "admin"), updateProjectMembers);
 

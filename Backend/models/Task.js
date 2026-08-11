@@ -47,6 +47,12 @@ const TaskSchema = new mongoose.Schema(
       default: null,
     },
 
+    phase: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Phase",
+      default: null,
+    },
+
     assignedTo: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
@@ -134,6 +140,10 @@ TaskSchema.index({
 
 TaskSchema.index({
   project: 1,
+});
+
+TaskSchema.index({
+  phase: 1,
 });
 
 TaskSchema.index({

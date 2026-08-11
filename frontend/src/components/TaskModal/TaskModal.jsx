@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
+import { toast } from "react-toastify";
 
 import FormModal from "../FormModal/FormModal";
+import projectService from "../../services/projectService";
 import "./TaskModal.css";
 
 function TaskModal({
@@ -18,11 +20,18 @@ function TaskModal({
     description: "",
     assignedTo: "",
     project: "",
+    phase: "",
     priority: "Medium",
     dueDate: "",
     checklist: [],
     referenceAttachments: [],
   });
+
+  const [projectPhases, setProjectPhases] = useState([]);
+
+  const selectedProject = projects.find(
+    (project) => project._id === formData.project,
+  );
 
   useEffect(() => {
     if (!isOpen) return;
@@ -33,6 +42,7 @@ function TaskModal({
         description: task.description || "",
         assignedTo: task.assignedTo?._id || "",
         project: task.project?._id || "",
+        phase: task.phase?._id || (typeof task.phase === "string" ? task.phase : ""),
         priority: task.priority || "Medium",
         dueDate: task.dueDate ? task.dueDate.substring(0, 10) : "",
         checklist: task.checklist || [],
@@ -44,6 +54,7 @@ function TaskModal({
         description: "",
         assignedTo: "",
         project: defaultProject?._id || "",
+        phase: "",
         priority: "Medium",
         dueDate: "",
         checklist: [],
@@ -52,6 +63,30 @@ function TaskModal({
     }
   }, [task, isOpen, defaultProject]);
 
+  useEffect(() => {
+    if (!formData.project) {
+      setProjectPhases([]);
+      return;
+    }
+
+    if (selectedProject?.phases) {
+      setProjectPhases(selectedProject.phases);
+      return;
+    }
+
+    // Fallback: fetch project details if phases not populated
+    const fetchPhases = async () => {
+      try {
+        const res = await projectService.getProject(formData.project);
+        setProjectPhases(res?.data?.phases || []);
+      } catch {
+        setProjectPhases([]);
+      }
+    };
+
+    fetchPhases();
+  }, [formData.project, selectedProject]);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
 
@@ -59,6 +94,7 @@ function TaskModal({
       setFormData((prev) => ({
         ...prev,
         project: value,
+        phase: "",
         assignedTo: "",
       }));
 
@@ -71,10 +107,17 @@ function TaskModal({
     }));
   };
 
+  const hasPhases = projectPhases.length > 0;
+
   const handleSubmit = (e) => {
     e.preventDefault();
 
     if (!isEditable) return;
+
+    if (hasPhases && !formData.phase) {
+      toast.error("Please select a phase for this project.");
+      return;
+    }
 
     const data = new FormData();
 
@@ -84,6 +127,10 @@ function TaskModal({
 
     if (formData.project) {
       data.append("project", formData.project);
+    }
+
+    if (formData.phase) {
+      data.append("phase", formData.phase);
     }
 
     data.append("priority", formData.priority);
@@ -107,10 +154,6 @@ function TaskModal({
   ];
 
   const isEditable = !task || editableStatuses.includes(task.status);
-
-  const selectedProject = projects.find(
-    (project) => project._id === formData.project,
-  );
 
   const availableEmployees =
     selectedProject && selectedProject.members?.length
@@ -215,6 +258,35 @@ function TaskModal({
                     {project.name}
                   </option>
                 ))}
+              </select>
+            </div>
+
+            <div className="form-group">
+              <label>
+                Phase {hasPhases ? <span style={{ color: "#ef4444" }}>*</span> : ""}
+              </label>
+
+              <select
+                name="phase"
+                value={formData.phase}
+                onChange={handleChange}
+                disabled={!isEditable || !hasPhases}
+                required={hasPhases}
+              >
+                {!formData.project ? (
+                  <option value="">None (Independent Task)</option>
+                ) : !hasPhases ? (
+                  <option value="">None (Project has no phases)</option>
+                ) : (
+                  <>
+                    <option value="">Select Phase</option>
+                    {projectPhases.map((phase) => (
+                      <option key={phase._id} value={phase._id}>
+                        {phase.name}
+                      </option>
+                    ))}
+                  </>
+                )}
               </select>
             </div>
           </div>

@@ -4,6 +4,9 @@ const {
   getProjectById,
   updateProject,
   toggleProjectStatus,
+  addProjectPhase,
+  updateProjectPhase,
+  deleteProjectPhase,
 } = require("../services/project/projectManagementService");
 
 const {
@@ -18,6 +21,9 @@ module.exports = {
   getProjectById,
   updateProject,
   toggleProjectStatus,
+  addProjectPhase,
+  updateProjectPhase,
+  deleteProjectPhase,
 
   updateProjectMembers,
   getProjectMembers,

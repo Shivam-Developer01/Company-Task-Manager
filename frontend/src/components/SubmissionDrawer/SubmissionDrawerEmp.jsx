@@ -15,6 +15,27 @@ function SubmissionDrawer({ isOpen, submission, onClose }) {
     <SideDrawer isOpen={isOpen} title="Submission Details" onClose={onClose}>
       {!submission ? null : (
         <>
+          {/* Hierarchy Banner */}
+          <div className="submission-hierarchy-banner">
+            <div className="hierarchy-item">
+              {submission.task?.project?.name ? (
+                <>
+                  📁 <strong>{submission.task.project.name}</strong>
+                  {submission.task?.phase?.name && (
+                    <>
+                      <span className="hierarchy-separator">›</span>
+                      📌 <span className="phase-chip">{submission.task.phase.name}</span>
+                    </>
+                  )}
+                  <span className="hierarchy-separator">›</span>
+                  📋 <span>{submission.task?.title}</span>
+                </>
+              ) : (
+                <span>⚡ <strong>Independent Task</strong> › {submission.task?.title}</span>
+              )}
+            </div>
+          </div>
+
           {/* ===========================
           Header
           =========================== */}
@@ -33,11 +54,12 @@ function SubmissionDrawer({ isOpen, submission, onClose }) {
               </div>
             </div>
           </div>
+
           {/* ===========================
         Task Information
         =========================== */}
           <div className="task-d-section">
-            <h4>Task Information</h4>
+            <h4>Task & Context Information</h4>
 
             <div className="task-info-d-grid">
               <div>
@@ -45,10 +67,19 @@ function SubmissionDrawer({ isOpen, submission, onClose }) {
                 <span>{submission.task?.title}</span>
               </div>
 
-              <div>
-                <label>Project</label>
-                <span>{submission.task?.project?.name || "-"}</span>
-              </div>
+              {submission.task?.project?.name && (
+                <div>
+                  <label>Project</label>
+                  <span>{submission.task.project.name}</span>
+                </div>
+              )}
+
+              {submission.task?.phase?.name && (
+                <div>
+                  <label>Phase</label>
+                  <span className="phase-text-badge">📌 {submission.task.phase.name}</span>
+                </div>
+              )}
 
               <div>
                 <label>Assigned To</label>

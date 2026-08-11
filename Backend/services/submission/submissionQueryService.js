@@ -43,7 +43,11 @@ const getMySubmissions = async (req, res) => {
   const submissions = await Submission.find(query)
     .populate({
       path: "task",
-      select: "title status priority dueDate",
+      select: "title status priority dueDate project phase",
+      populate: [
+        { path: "project", select: "name" },
+        { path: "phase", select: "name" },
+      ],
     })
     .populate("reviewedBy", "name")
     .sort({
@@ -135,7 +139,14 @@ const getAllSubmissions = async (req, res) => {
   const skip = (Number(page) - 1) * Number(limit);
 
   const submissions = await Submission.find(query)
-    .populate("task", "title status priority dueDate")
+    .populate({
+      path: "task",
+      select: "title status priority dueDate project phase",
+      populate: [
+        { path: "project", select: "name" },
+        { path: "phase", select: "name" },
+      ],
+    })
     .populate("submittedBy", "name employeeId")
     .populate("reviewedBy", "name")
     .sort({
@@ -167,6 +178,10 @@ const getSubmissionById = async (req, res) => {
     populate: [
       {
         path: "project",
+        select: "name",
+      },
+      {
+        path: "phase",
         select: "name",
       },
       {

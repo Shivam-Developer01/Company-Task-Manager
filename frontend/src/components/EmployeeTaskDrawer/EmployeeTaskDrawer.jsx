@@ -47,8 +47,26 @@ function EmployeeTaskDrawer({
     <SideDrawer isOpen={isOpen} title="Task Details" onClose={onClose}>
       {!task ? null : (
         <>
-          {/* Header */}
+          {/* Hierarchy Banner */}
+          <div className="task-hierarchy-banner">
+            <div className="hierarchy-item">
+              {task.project?.name ? (
+                <>
+                  📁 <strong>{task.project.name}</strong>
+                  {task.phase?.name && (
+                    <>
+                      <span className="hierarchy-separator">›</span>
+                      📌 <span className="phase-chip">{task.phase.name}</span>
+                    </>
+                  )}
+                </>
+              ) : (
+                <span>⚡ <strong>Independent Task</strong></span>
+              )}
+            </div>
+          </div>
 
+          {/* Header */}
           <div className="task-d-header">
             <div className="task-d-avatar">
               {task.title?.charAt(0).toUpperCase()}
@@ -56,48 +74,51 @@ function EmployeeTaskDrawer({
 
             <h2>{task.title}</h2>
 
-            <StatusBadge status={task.status} />
-
-            <span className={`priority-d-chip ${task.priority.toLowerCase()}`}>
-              {task.priority}
-            </span>
+            <div style={{ display: "flex", gap: "8px", marginTop: "8px", alignItems: "center" }}>
+              <StatusBadge status={task.status} />
+              <span className={`priority-d-chip ${task.priority.toLowerCase()}`}>
+                {task.priority}
+              </span>
+            </div>
           </div>
 
           {/* Description */}
-
           <div className="task-d-section">
             <h4>Description</h4>
-
             <p>{task.description}</p>
           </div>
 
-          {/* Assignment */}
-
+          {/* Assignment & Context */}
           <div className="task-d-section">
-            <h4>Assignment</h4>
+            <h4>Assignment & Context</h4>
 
             <div className="task-info-d-grid">
               <div>
                 <label>Employee</label>
-
-                <span>{task.assignedTo?.name}</span>
+                <span>{task.assignedTo?.name || "-"}</span>
               </div>
 
-              <div>
-                <label>Project</label>
+              {task.project?.name && (
+                <div>
+                  <label>Project</label>
+                  <span>{task.project.name}</span>
+                </div>
+              )}
 
-                <span>{task.project?.name || "-"}</span>
-              </div>
+              {task.phase?.name && (
+                <div>
+                  <label>Phase</label>
+                  <span className="phase-text-badge">📌 {task.phase.name}</span>
+                </div>
+              )}
 
               <div>
                 <label>Assigned By</label>
-
-                <span>{task.assignedBy?.name}</span>
+                <span>{task.assignedBy?.name || "-"}</span>
               </div>
 
               <div>
                 <label>Due Date</label>
-
                 <span>{formatDate(task.dueDate)}</span>
               </div>
             </div>

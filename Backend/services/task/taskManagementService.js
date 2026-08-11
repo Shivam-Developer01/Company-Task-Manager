@@ -1,6 +1,7 @@
 const Task = require("../../models/Task");
 const User = require("../../models/User");
 const Project = require("../../models/Project");
+const Phase = require("../../models/Phase");
 const CustomError = require("../../errors/CustomError");
 
 const createActivity = require("../../utils/createActivity");
@@ -24,6 +25,7 @@ const createTask = async (req, res) => {
     priority,
     dueDate,
     project,
+    phase,
     checklist,
   } = req.body;
 
@@ -66,6 +68,51 @@ const createTask = async (req, res) => {
     }
   }
 
+  let phaseDoc = null;
+
+  if (projectDoc) {
+    const projectPhases = await Phase.find({
+      project: projectDoc._id,
+      isArchived: false,
+    });
+
+    if (projectPhases.length > 0) {
+      if (!phase) {
+        throw new CustomError(
+          `Please select a phase for project "${projectDoc.name}".`,
+          400,
+        );
+      }
+
+      phaseDoc = await Phase.findOne({
+        _id: phase,
+        project: projectDoc._id,
+        isArchived: false,
+      });
+
+      if (!phaseDoc) {
+        throw new CustomError(
+          "Selected phase does not belong to the selected project.",
+          400,
+        );
+      }
+    } else {
+      if (phase) {
+        throw new CustomError(
+          `Project "${projectDoc.name}" does not have phases.`,
+          400,
+        );
+      }
+    }
+  } else {
+    if (phase) {
+      throw new CustomError(
+        "Independent tasks cannot be assigned to a project phase.",
+        400,
+      );
+    }
+  }
+
   // Upload reference attachments
   const referenceAttachments = (req.files || []).map((file) => ({
     fileName: file.filename,
@@ -92,6 +139,7 @@ const createTask = async (req, res) => {
     title,
     description,
     project: projectDoc ? projectDoc._id : null,
+    phase: phaseDoc ? phaseDoc._id : null,
     assignedTo,
     assignedBy: req.user.userId,
     priority,
@@ -133,6 +181,7 @@ const updateTask = async (req, res) => {
     priority,
     dueDate,
     project,
+    phase,
     checklist,
   } = req.body;
 
@@ -211,6 +260,57 @@ const updateTask = async (req, res) => {
     }
 
     task.assignedTo = assignedTo;
+  }
+
+  const finalProjectId = task.project;
+
+  if (!finalProjectId) {
+    if (phase) {
+      throw new CustomError(
+        "Independent tasks cannot be assigned to a project phase.",
+        400,
+      );
+    }
+    task.phase = null;
+  } else {
+    const projectPhases = await Phase.find({
+      project: finalProjectId,
+      isArchived: false,
+    });
+
+    if (projectPhases.length > 0) {
+      const targetPhase = phase !== undefined ? phase : task.phase;
+
+      if (!targetPhase) {
+        throw new CustomError(
+          "A phase is required for tasks in this project.",
+          400,
+        );
+      }
+
+      const phaseDoc = await Phase.findOne({
+        _id: targetPhase,
+        project: finalProjectId,
+        isArchived: false,
+      });
+
+      if (!phaseDoc) {
+        throw new CustomError(
+          "Selected phase does not belong to the selected project.",
+          400,
+        );
+      }
+
+      task.phase = phaseDoc._id;
+    } else {
+      if (phase) {
+        throw new CustomError(
+          "Selected project has no phases.",
+          400,
+        );
+      }
+      task.phase = null;
+    }
   }
 
   if (title !== undefined) task.title = title;

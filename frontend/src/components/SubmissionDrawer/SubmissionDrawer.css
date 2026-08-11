@@ -157,3 +157,35 @@
     grid-template-columns: 1fr;
   }
 }
+
+.submission-hierarchy-banner {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 8px 14px;
+  margin-bottom: 16px;
+  font-size: 13px;
+  color: #334155;
+}
+
+.submission-hierarchy-banner .hierarchy-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.phase-text-badge {
+  color: #2563eb !important;
+  font-weight: 600 !important;
+}
+
+.phase-chip {
+  background: #eff6ff;
+  color: #2563eb;
+  border: 1px solid #bfdbfe;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+}

@@ -128,9 +128,14 @@ function Projects() {
     setSearchParams(params, { replace: true });
   }, [projects, searchParams, setSearchParams, handleView]);
 
-  const handleEdit = useCallback((project) => {
+  const handleEdit = useCallback(async (project) => {
     setProjectModalMode("edit");
-    setEditingProject(project);
+    try {
+      const response = await projectService.getProject(project._id);
+      setEditingProject(response.data);
+    } catch {
+      setEditingProject(project);
+    }
     setModalOpen(true);
   }, []);
 
@@ -511,53 +516,248 @@ function Projects() {
               )}
             </div>
 
-            <div className="project-section" style={{ marginBottom: "10px" }}>
-              <div className="project-section-header">
-                <h3>Project Tasks</h3>
-                <span>
-                  {selectedProject.tasks?.length || 0} Task
-                  {selectedProject.tasks?.length !== 1 ? "s" : ""}
-                </span>
-              </div>
+            {selectedProject.phases?.length > 0 ? (
+              <div className="project-section" style={{ marginBottom: "15px" }}>
+                <div className="project-section-header">
+                  <h3>Project Phases & Tasks</h3>
+                  <span>
+                    {selectedProject.phases.length} Phase
+                    {selectedProject.phases.length !== 1 ? "s" : ""} •{" "}
+                    {selectedProject.tasks?.length || 0} Task
+                    {selectedProject.tasks?.length !== 1 ? "s" : ""}
+                  </span>
+                </div>
 
-              {selectedProject.tasks?.length ? (
-                <div className="project-task-list">
-                  {selectedProject.tasks.map((task) => (
+                {selectedProject.phases.map((phase) => {
+                  const phaseTasks = (selectedProject.tasks || []).filter(
+                    (t) =>
+                      (t.phase?._id || t.phase) === phase._id ||
+                      t.phase?.name === phase.name,
+                  );
+
+                  return (
                     <div
-                      key={task._id}
-                      className="project-task-card"
-                      onClick={() => handleTaskClick(task)}
+                      key={phase._id}
+                      style={{
+                        marginBottom: "16px",
+                        background: "#f8fafc",
+                        padding: "14px",
+                        borderRadius: "10px",
+                        border: "1px solid #e2e8f0",
+                      }}
                     >
-                      <div className="project-task-top">
-                        <h4>{task.title}</h4>
-
-                        <StatusBadge status={task.status} />
+                      <div
+                        style={{
+                          display: "flex",
+                          justify: "space-between",
+                          alignItems: "center",
+                          marginBottom: "10px",
+                        }}
+                      >
+                        <h4
+                          style={{
+                            margin: 0,
+                            fontSize: "14px",
+                            color: "#1e293b",
+                            fontWeight: "700",
+                          }}
+                        >
+                          📌 Phase: {phase.name}
+                        </h4>
+                        <span
+                          style={{
+                            fontSize: "12px",
+                            background: "#e2e8f0",
+                            padding: "2px 8px",
+                            borderRadius: "12px",
+                            color: "#475569",
+                            fontWeight: "600",
+                          }}
+                        >
+                          {phaseTasks.length} Task
+                          {phaseTasks.length !== 1 ? "s" : ""}
+                        </span>
                       </div>
 
-                      <div className="project-task-meta">
-                        <span>
-                          <strong>Assigned To:</strong>{" "}
-                          {task.assignedTo?.name || "-"}
-                        </span>
+                      {phaseTasks.length > 0 ? (
+                        <div className="project-task-list">
+                          {phaseTasks.map((task) => (
+                            <div
+                              key={task._id}
+                              className="project-task-card"
+                              onClick={() => handleTaskClick(task)}
+                            >
+                              <div className="project-task-top">
+                                <h4>{task.title}</h4>
+                                <StatusBadge status={task.status} />
+                              </div>
 
-                        <span>
-                          <strong>Priority:</strong> {task.priority}
-                        </span>
+                              <div className="project-task-meta">
+                                <span>
+                                  <strong>Assigned To:</strong>{" "}
+                                  {task.assignedTo?.name || "-"}
+                                </span>
+                                <span>
+                                  <strong>Priority:</strong> {task.priority}
+                                </span>
+                                <span>
+                                  <strong>Due:</strong>{" "}
+                                  {task.dueDate
+                                    ? formatDateTime(task.dueDate)
+                                    : "-"}
+                                </span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div
+                          style={{
+                            fontSize: "13px",
+                            color: "#94a3b8",
+                            fontStyle: "italic",
+                            padding: "4px 0",
+                          }}
+                        >
+                          No tasks in this phase.
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
 
-                        <span>
-                          <strong>Due:</strong>{" "}
-                          {task.dueDate ? formatDateTime(task.dueDate) : "-"}
+                {/* Direct Tasks if any legacy unphased tasks exist */}
+                {(() => {
+                  const directTasks = (selectedProject.tasks || []).filter(
+                    (t) => !t.phase,
+                  );
+                  if (directTasks.length === 0) return null;
+
+                  return (
+                    <div
+                      style={{
+                        marginBottom: "16px",
+                        background: "#f8fafc",
+                        padding: "14px",
+                        borderRadius: "10px",
+                        border: "1px dashed #cbd5e1",
+                      }}
+                    >
+                      <div
+                        style={{
+                          display: "flex",
+                          justify: "space-between",
+                          alignItems: "center",
+                          marginBottom: "10px",
+                        }}
+                      >
+                        <h4
+                          style={{
+                            margin: 0,
+                            fontSize: "14px",
+                            color: "#475569",
+                            fontWeight: "700",
+                          }}
+                        >
+                          📄 Direct Tasks (No Phase)
+                        </h4>
+                        <span
+                          style={{
+                            fontSize: "12px",
+                            background: "#e2e8f0",
+                            padding: "2px 8px",
+                            borderRadius: "12px",
+                            color: "#475569",
+                            fontWeight: "600",
+                          }}
+                        >
+                          {directTasks.length} Task
+                          {directTasks.length !== 1 ? "s" : ""}
                         </span>
+                      </div>
+
+                      <div className="project-task-list">
+                        {directTasks.map((task) => (
+                          <div
+                            key={task._id}
+                            className="project-task-card"
+                            onClick={() => handleTaskClick(task)}
+                          >
+                            <div className="project-task-top">
+                              <h4>{task.title}</h4>
+                              <StatusBadge status={task.status} />
+                            </div>
+
+                            <div className="project-task-meta">
+                              <span>
+                                <strong>Assigned To:</strong>{" "}
+                                {task.assignedTo?.name || "-"}
+                              </span>
+                              <span>
+                                <strong>Priority:</strong> {task.priority}
+                              </span>
+                              <span>
+                                <strong>Due:</strong>{" "}
+                                {task.dueDate
+                                  ? formatDateTime(task.dueDate)
+                                  : "-"}
+                              </span>
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     </div>
-                  ))}
+                  );
+                })()}
+              </div>
+            ) : (
+              <div className="project-section" style={{ marginBottom: "10px" }}>
+                <div className="project-section-header">
+                  <h3>Project Tasks</h3>
+                  <span>
+                    {selectedProject.tasks?.length || 0} Task
+                    {selectedProject.tasks?.length !== 1 ? "s" : ""}
+                  </span>
                 </div>
-              ) : (
-                <div className="project-empty-state">
-                  No tasks have been created for this project.
-                </div>
-              )}
-            </div>
+
+                {selectedProject.tasks?.length ? (
+                  <div className="project-task-list">
+                    {selectedProject.tasks.map((task) => (
+                      <div
+                        key={task._id}
+                        className="project-task-card"
+                        onClick={() => handleTaskClick(task)}
+                      >
+                        <div className="project-task-top">
+                          <h4>{task.title}</h4>
+                          <StatusBadge status={task.status} />
+                        </div>
+
+                        <div className="project-task-meta">
+                          <span>
+                            <strong>Assigned To:</strong>{" "}
+                            {task.assignedTo?.name || "-"}
+                          </span>
+
+                          <span>
+                            <strong>Priority:</strong> {task.priority}
+                          </span>
+
+                          <span>
+                            <strong>Due:</strong>{" "}
+                            {task.dueDate ? formatDateTime(task.dueDate) : "-"}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="project-empty-state">
+                    No tasks have been created for this project.
+                  </div>
+                )}
+              </div>
+            )}
 
             <div className="employee-details">
               <div className="detail-item">

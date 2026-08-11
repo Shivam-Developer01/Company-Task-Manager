@@ -14,6 +14,7 @@ const getAllTasks = async (req, res) => {
     priority,
     employee,
     project,
+    phase,
     overdue,
     isArchived,
     page = 1,
@@ -55,6 +56,10 @@ const getAllTasks = async (req, res) => {
 
   if (project) {
     query.project = project;
+  }
+
+  if (phase) {
+    query.phase = phase;
   }
 
   if (isArchived !== undefined) {
@@ -104,6 +109,7 @@ const getAllTasks = async (req, res) => {
     .populate("assignedTo", "name employeeId")
     .populate("assignedBy", "name")
     .populate("project", "name")
+    .populate("phase", "name")
     .sort({
       [sort]: order === "asc" ? 1 : -1,
     })
@@ -140,6 +146,7 @@ const getTaskById = async (req, res) => {
   );
   await task.populate("assignedBy", "name");
   await task.populate("project", "name description");
+  await task.populate("phase", "name description");
   await task.populate("createdBy", "name");
   await task.populate("updatedBy", "name");
 

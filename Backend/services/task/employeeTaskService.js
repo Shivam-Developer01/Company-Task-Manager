@@ -49,6 +49,7 @@ const getMyTasks = async (req, res) => {
 
   const tasks = await Task.find(query)
     .populate("project", "name")
+    .populate("phase", "name")
     .populate("assignedBy", "name")
     .sort({
       dueDate: 1,

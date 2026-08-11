@@ -1,6 +1,7 @@
 const User = require("../../models/User");
 const Project = require("../../models/Project");
 const Task = require("../../models/Task");
+const Phase = require("../../models/Phase");
 const Submission = require("../../models/Submission");
 const Activity = require("../../models/Activity");
 const { getSubmissionFilter } = require("../access/submissionAccess");
@@ -108,9 +109,13 @@ const getManagerDashboard = async (req, res) => {
               },
             ],
           };
-  } else {
+  } else if (projectIds.length > 0) {
     projectFilter = {
       project: projectIds[0],
+    };
+  } else {
+    projectFilter = {
+      _id: null,
     };
   }
 
@@ -139,6 +144,7 @@ const getManagerDashboard = async (req, res) => {
     recentActivities,
     projectInfo,
     projectTasks,
+    projectPhasesList,
     teamMetrics,
   ] = await Promise.all([
     // ===========================================================
@@ -261,14 +267,14 @@ const getManagerDashboard = async (req, res) => {
     // ===========================================================
     // Project Members
     // ===========================================================
-    allProjects || noProject
+    allProjects || noProject || !projectIds.length
       ? Promise.resolve(null)
       : Project.findById(projectIds[0]).populate("members", "name role").lean(),
 
     // ===========================================================
     // Project Tasks
     // ===========================================================
-    allProjects || noProject
+    allProjects || noProject || !projectIds.length
       ? Promise.resolve([])
       : Task.find({
           project: projectIds[0],
@@ -276,6 +282,18 @@ const getManagerDashboard = async (req, res) => {
         })
           .select("title status assignedTo")
           .populate("assignedTo", "name")
+          .lean(),
+
+    // ===========================================================
+    // Project Phases
+    // ===========================================================
+    allProjects || noProject || !projectIds.length
+      ? Promise.resolve([])
+      : Phase.find({
+          project: projectIds[0],
+          isArchived: false,
+        })
+          .sort({ order: 1, createdAt: 1 })
           .lean(),
 
     // ===========================================================
@@ -334,6 +352,57 @@ const getManagerDashboard = async (req, res) => {
           name: member.name,
           role: member.role,
           activeTasks: member.role === ROLES.EMPLOYEE ? activeTasks : null,
+        };
+      }),
+    );
+  }
+
+  let projectPhases = [];
+
+  if (projectPhasesList && projectPhasesList.length > 0) {
+    projectPhases = await Promise.all(
+      projectPhasesList.map(async (phase) => {
+        const totalTasks = await Task.countDocuments({
+          project: projectIds[0],
+          phase: phase._id,
+          isArchived: false,
+        });
+
+        const completedTasks = await Task.countDocuments({
+          project: projectIds[0],
+          phase: phase._id,
+          isArchived: false,
+          status: TASK_STATUS.CLOSED,
+        });
+
+        const inProgressTasks = await Task.countDocuments({
+          project: projectIds[0],
+          phase: phase._id,
+          isArchived: false,
+          status: TASK_STATUS.IN_PROGRESS,
+        });
+
+        const overdueTasks = await Task.countDocuments({
+          project: projectIds[0],
+          phase: phase._id,
+          isArchived: false,
+          dueDate: { $lt: today },
+          status: {
+            $in: [
+              TASK_STATUS.ASSIGNED,
+              TASK_STATUS.ACCEPTED,
+              TASK_STATUS.IN_PROGRESS,
+            ],
+          },
+        });
+
+        return {
+          _id: phase._id,
+          name: phase.name,
+          totalTasks,
+          completedTasks,
+          inProgressTasks,
+          overdueTasks,
         };
       }),
     );
@@ -400,6 +469,8 @@ const getManagerDashboard = async (req, res) => {
     projectMembers,
 
     projectTasks,
+
+    projectPhases,
   });
 };
 

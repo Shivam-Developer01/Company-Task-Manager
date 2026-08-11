@@ -2,6 +2,7 @@ import "./Dashboard.css";
 
 import ProjectMembersCard from "../../components/ProjectMembersCard/ProjectMembersCard";
 import ProjectTasksCard from "../../components/ProjectTasksCard/ProjectTasksCard";
+import ProjectPhaseOverview from "../../components/ProjectPhaseOverview/ProjectPhaseOverview";
 
 import { useEffect, useState } from "react";
 
@@ -629,6 +630,10 @@ function Dashboard() {
         </section>
       ) : (
         <>
+          {dashboard?.projectPhases?.length > 0 && (
+            <ProjectPhaseOverview phases={dashboard.projectPhases} />
+          )}
+
           <ProjectMembersCard members={dashboard?.projectMembers || []} />
 
           <ProjectTasksCard tasks={dashboard?.projectTasks || []} />

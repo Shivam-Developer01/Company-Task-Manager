@@ -9,7 +9,7 @@ function ProjectTasksCard({ tasks }) {
         <table className="project-tasks-table">
           <thead>
             <tr>
-              <th>Task</th>
+              <th>Task Name</th>
               <th>Assigned To</th>
               <th>Status</th>
             </tr>

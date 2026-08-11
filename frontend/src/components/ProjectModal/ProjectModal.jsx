@@ -4,6 +4,7 @@ import "./ProjectModal.css";
 import FormModal from "../FormModal/FormModal";
 import SearchableMultiSelect from "../SearchableMultiSelect/SearchableMultiSelect";
 import userService from "../../services/userService";
+import projectService from "../../services/projectService";
 
 import { useEffect, useState } from "react";
 
@@ -19,6 +20,7 @@ function ProjectModal({
     name: "",
     description: "",
     members: [],
+    phases: [],
   });
 
   const [employees, setEmployees] = useState([]);
@@ -51,8 +53,20 @@ function ProjectModal({
         setEmployees(employeeOptions);
 
         if (project) {
+          let projectData = project;
+          if ((!project.phases || project.phases.length === 0) && project._id) {
+            try {
+              const res = await projectService.getProject(project._id);
+              if (res?.data?.phases) {
+                projectData = res.data;
+              }
+            } catch (err) {
+              console.error(err);
+            }
+          }
+
           const selectedMembers = employeeOptions.filter((employee) =>
-            (project.members || []).some(
+            (projectData.members || []).some(
               (member) =>
                 (typeof member === "string" ? member : member._id) ===
                 employee._id,
@@ -60,15 +74,19 @@ function ProjectModal({
           );
 
           setFormData({
-            name: project.name || "",
-            description: project.description || "",
+            name: projectData.name || "",
+            description: projectData.description || "",
             members: selectedMembers,
+            phases: (projectData.phases || []).map((p) =>
+              typeof p === "string" ? p : p.name,
+            ),
           });
         } else {
           setFormData({
             name: "",
             description: "",
             members: [],
+            phases: [],
           });
         }
       } catch (error) {
@@ -95,11 +113,34 @@ function ProjectModal({
     }));
   };
 
+  const handleAddPhase = () => {
+    setFormData((prev) => ({
+      ...prev,
+      phases: [...prev.phases, ""],
+    }));
+  };
+
+  const handlePhaseChange = (index, value) => {
+    setFormData((prev) => {
+      const updated = [...prev.phases];
+      updated[index] = value;
+      return { ...prev, phases: updated };
+    });
+  };
+
+  const handleRemovePhase = (index) => {
+    setFormData((prev) => ({
+      ...prev,
+      phases: prev.phases.filter((_, i) => i !== index),
+    }));
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     onSubmit({
       ...formData,
       members: formData.members.map((member) => member._id),
+      phases: formData.phases.filter((p) => typeof p === "string" && p.trim() !== ""),
     });
   };
 
@@ -164,6 +205,40 @@ function ProjectModal({
             )}
           />
         </div>
+
+        {mode !== "members" && (
+          <div className="form-group">
+            <div className="section-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
+              <label style={{ margin: 0 }}>Project Phases (Optional)</label>
+              <button
+                type="button"
+                className="add-item-btn"
+                onClick={handleAddPhase}
+                style={{ background: "none", border: "none", color: "#2563eb", cursor: "pointer", fontWeight: "600" }}
+              >
+                + Add Phase
+              </button>
+            </div>
+            {formData.phases.map((phase, idx) => (
+              <div key={idx} style={{ display: "flex", gap: "8px", marginBottom: "8px" }}>
+                <input
+                  type="text"
+                  placeholder={`Phase ${idx + 1} Name`}
+                  value={phase}
+                  onChange={(e) => handlePhaseChange(idx, e.target.value)}
+                  style={{ flex: 1 }}
+                />
+                <button
+                  type="button"
+                  onClick={() => handleRemovePhase(idx)}
+                  style={{ background: "none", border: "none", color: "#ef4444", cursor: "pointer", fontSize: "16px" }}
+                >
+                  ✕
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
 
         <div className="form-actions">
           <button type="button" className="secondary-btn" onClick={onClose}>

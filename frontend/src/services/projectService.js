@@ -30,6 +30,21 @@ const projectService = {
     const response = await api.patch(`/projects/${id}/status`);
     return response.data;
   },
+
+  addPhase: async (projectId, phaseData) => {
+    const response = await api.post(`/projects/${projectId}/phases`, phaseData);
+    return response.data;
+  },
+
+  updatePhase: async (projectId, phaseId, phaseData) => {
+    const response = await api.patch(`/projects/${projectId}/phases/${phaseId}`, phaseData);
+    return response.data;
+  },
+
+  deletePhase: async (projectId, phaseId) => {
+    const response = await api.delete(`/projects/${projectId}/phases/${phaseId}`);
+    return response.data;
+  },
 };
 
 export default projectService;
