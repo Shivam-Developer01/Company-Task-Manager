@@ -11,6 +11,7 @@ import Tasks from "./pages/Tasks/Tasks";
 import Submissions from "./pages/Submissions/Submissions";
 import Notifications from "./pages/Notifications/Notifications";
 import Profile from "./pages/Profile/Profile";
+import RoleInsights from "./pages/RoleInsights/RoleInsights";
 
 import EmployeeDashboard from "./pages/EmployeeDashboard/EmployeeDashboard";
 import MyTasks from "./pages/MyTasks/MyTasks";
@@ -35,7 +36,7 @@ function App() {
         }
       />
 
-      {/* ================= MANAGER ================= */}
+      {/* ================= MANAGER / ADMIN ================= */}
 
       <Route
         element={
@@ -60,6 +61,8 @@ function App() {
 
         <Route path="/submissions" element={<Submissions />} />
 
+        <Route path="/role-insights" element={<RoleInsights />} />
+
         <Route path="/notifications" element={<Notifications />} />
 
         <Route path="/profile" element={<Profile />} />
@@ -81,6 +84,8 @@ function App() {
         <Route path="/employee/tasks" element={<MyTasks />} />
 
         <Route path="/employee/submissions" element={<MySubmissions />} />
+
+        <Route path="/employee/role-insights" element={<RoleInsights />} />
 
         <Route path="/employee/notifications" element={<Notifications />} />
 

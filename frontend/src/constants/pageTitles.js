@@ -1,6 +1,6 @@
 export const PAGE_TITLES = {
   /* ===========================
-          MANAGER
+          MANAGER / ADMIN
   =========================== */
 
   "/dashboard": {
@@ -21,6 +21,10 @@ export const PAGE_TITLES = {
 
   "/submissions": {
     title: "Submissions",
+  },
+
+  "/role-insights": {
+    title: "Role Insights",
   },
 
   "/notifications": {
@@ -45,6 +49,10 @@ export const PAGE_TITLES = {
 
   "/employee/submissions": {
     title: "My Submissions",
+  },
+
+  "/employee/role-insights": {
+    title: "Role Insights",
   },
 
   "/employee/notifications": {

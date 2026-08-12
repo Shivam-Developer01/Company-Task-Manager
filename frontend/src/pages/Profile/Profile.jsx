@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-
 import { FiKey, FiUser, FiBriefcase } from "react-icons/fi";
 
 import { toast } from "react-toastify";

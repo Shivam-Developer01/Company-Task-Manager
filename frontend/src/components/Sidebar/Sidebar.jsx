@@ -11,6 +11,7 @@ import {
   FiBriefcase,
   FiAward,
   FiColumns,
+  FiPieChart,
 } from "react-icons/fi";
 
 import { ROUTES } from "../../constants/routes";
@@ -131,6 +132,15 @@ function Sidebar({ collapsed, mobileOpen, setMobileOpen }) {
           >
             <FiUploadCloud />
             <span>Submissions</span>
+          </NavLink>
+
+          <NavLink
+            to={ROUTES.ROLE_INSIGHTS}
+            className={navClass}
+            onClick={() => setMobileOpen(false)}
+          >
+            <FiPieChart />
+            <span>Role Insights</span>
           </NavLink>
 
           <NavLink

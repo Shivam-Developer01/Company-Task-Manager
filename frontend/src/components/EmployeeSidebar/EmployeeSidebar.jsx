@@ -7,6 +7,7 @@ import {
   FiUser,
   FiX,
   FiColumns,
+  FiPieChart,
 } from "react-icons/fi";
 
 import { ROUTES } from "../../constants/routes";
@@ -62,6 +63,11 @@ function EmployeeSidebar({ collapsed, mobileOpen, setMobileOpen }) {
           <NavLink to={ROUTES.EMPLOYEE_SUBMISSIONS}>
             <FiUploadCloud />
             <span>My Submissions</span>
+          </NavLink>
+
+          <NavLink to={ROUTES.EMPLOYEE_ROLE_INSIGHTS}>
+            <FiPieChart />
+            <span>Role Insights</span>
           </NavLink>
 
           <NavLink to={ROUTES.EMPLOYEE_NOTIFICATIONS}>

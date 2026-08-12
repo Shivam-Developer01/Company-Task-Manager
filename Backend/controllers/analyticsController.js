@@ -38,17 +38,14 @@ const getMyEmployeeMetrics = async (req, res) => {
 
 /* ===========================================================
    GET /api/analytics/employee/:id
-   Admin: any employee.
-   Manager: employees who have tasks in the manager's
-            accessible projects or independent tasks
-            assigned by the manager.
+   Admin & Manager: view Employee Perspective for any employee.
    =========================================================== */
 
 const getEmployeeMetricsById = async (req, res) => {
   const { id } = req.params;
 
   // Validate that target user exists and is an employee
-  const targetUser = await User.findById(id).select("role").lean();
+  const targetUser = await User.findById(id).select("role name employeeId").lean();
 
   if (!targetUser) {
     throw new CustomError("Employee not found", 404);
@@ -58,31 +55,18 @@ const getEmployeeMetricsById = async (req, res) => {
     throw new CustomError("User is not an employee", 400);
   }
 
-  // Manager authorization: verify the employee has tasks in scope
-  if (req.user.role === ROLES.MANAGER) {
-    const projectIds = await getAccessibleProjectIds(req.user);
-
-    const hasAccess = await Task.exists({
-      assignedTo: new mongoose.Types.ObjectId(id),
-      $or: [
-        { project: { $in: projectIds } },
-        {
-          project: null,
-          assignedBy: new mongoose.Types.ObjectId(req.user.userId),
-        },
-      ],
-    });
-
-    if (!hasAccess) {
-      throw new CustomError("Forbidden", 403);
-    }
-  }
-
   const metrics = await getEmployeeMetrics(id, req.query.project || null);
 
   res.status(200).json({
     success: true,
-    data: metrics,
+    data: {
+      ...metrics,
+      employeeDetails: {
+        id: targetUser._id,
+        name: targetUser.name,
+        employeeId: targetUser.employeeId,
+      },
+    },
   });
 };
 
