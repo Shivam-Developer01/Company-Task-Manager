@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 
 import FormModal from "../FormModal/FormModal";
+import AiRecommendationCard from "../AiRecommendationCard/AiRecommendationCard";
 
 function ReassignModal({
   isOpen,
@@ -43,7 +44,7 @@ function ReassignModal({
       isOpen={isOpen}
       title="Reassign Task"
       onClose={onClose}
-      width="500px"
+      width="550px"
     >
       <form
         onSubmit={(e) => {
@@ -57,6 +58,13 @@ function ReassignModal({
 
           <input value={task?.assignedTo?.name || ""} disabled />
         </div>
+
+        {task?._id && (
+          <AiRecommendationCard
+            taskId={task._id}
+            onSelectEmployee={(empId) => setAssignedTo(empId)}
+          />
+        )}
 
         <div className="form-group">
           <label>New Employee</label>

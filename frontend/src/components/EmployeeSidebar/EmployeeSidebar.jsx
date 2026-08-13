@@ -8,6 +8,7 @@ import {
   FiX,
   FiColumns,
   FiPieChart,
+  FiCpu,
 } from "react-icons/fi";
 
 import { ROUTES } from "../../constants/routes";
@@ -68,6 +69,11 @@ function EmployeeSidebar({ collapsed, mobileOpen, setMobileOpen }) {
           <NavLink to={ROUTES.EMPLOYEE_ROLE_INSIGHTS}>
             <FiPieChart />
             <span>Role Insights</span>
+          </NavLink>
+
+          <NavLink to={ROUTES.EMPLOYEE_AI_REPORTS}>
+            <FiCpu />
+            <span>AI Reports</span>
           </NavLink>
 
           <NavLink to={ROUTES.EMPLOYEE_NOTIFICATIONS}>

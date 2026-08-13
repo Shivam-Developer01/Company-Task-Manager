@@ -12,6 +12,7 @@ import Submissions from "./pages/Submissions/Submissions";
 import Notifications from "./pages/Notifications/Notifications";
 import Profile from "./pages/Profile/Profile";
 import RoleInsights from "./pages/RoleInsights/RoleInsights";
+import AiReports from "./pages/AiReports/AiReports";
 
 import EmployeeDashboard from "./pages/EmployeeDashboard/EmployeeDashboard";
 import MyTasks from "./pages/MyTasks/MyTasks";
@@ -63,6 +64,8 @@ function App() {
 
         <Route path="/role-insights" element={<RoleInsights />} />
 
+        <Route path="/ai-reports" element={<AiReports />} />
+
         <Route path="/notifications" element={<Notifications />} />
 
         <Route path="/profile" element={<Profile />} />
@@ -86,6 +89,8 @@ function App() {
         <Route path="/employee/submissions" element={<MySubmissions />} />
 
         <Route path="/employee/role-insights" element={<RoleInsights />} />
+
+        <Route path="/employee/ai-reports" element={<AiReports />} />
 
         <Route path="/employee/notifications" element={<Notifications />} />
 

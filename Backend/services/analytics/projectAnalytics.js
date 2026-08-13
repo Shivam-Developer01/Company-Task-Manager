@@ -2,6 +2,7 @@ const mongoose = require("mongoose");
 
 const Task = require("../../models/Task");
 const Project = require("../../models/Project");
+const Phase = require("../../models/Phase");
 const CustomError = require("../../errors/CustomError");
 
 const { TASK_STATUS } = require("../../constants/constants");
@@ -176,6 +177,7 @@ const getProjectMetrics = async (projectId, user) => {
 
   const completedTasks = taskStatusDistribution[TASK_STATUS.CLOSED] || 0;
   const withdrawnTasks = taskStatusDistribution[TASK_STATUS.WITHDRAWN] || 0;
+  const pendingReviews = taskStatusDistribution[TASK_STATUS.SUBMITTED] || 0;
 
   // Overdue
   const overdueTasks =
@@ -189,6 +191,73 @@ const getProjectMetrics = async (projectId, user) => {
       : 0;
 
   /* -------------------------------------------------------
+     Phase breakdown metrics
+     ------------------------------------------------------- */
+  const phasesList = await Phase.find({
+    project: projectObjectId,
+    isArchived: { $ne: true },
+  })
+    .select("name status isArchived")
+    .lean();
+
+  const phaseMetrics = await Promise.all(
+    phasesList.map(async (phaseDoc) => {
+      const phaseTasks = await Task.find({
+        project: projectObjectId,
+        phase: phaseDoc._id,
+        isArchived: { $ne: true },
+      })
+        .select("status dueDate")
+        .lean();
+
+      const phaseTotal = phaseTasks.length;
+      const phaseActive = phaseTasks.filter((t) =>
+        [
+          TASK_STATUS.ASSIGNED,
+          TASK_STATUS.ACCEPTED,
+          TASK_STATUS.IN_PROGRESS,
+        ].includes(t.status)
+      ).length;
+      const phaseCompleted = phaseTasks.filter(
+        (t) => t.status === TASK_STATUS.CLOSED
+      ).length;
+      const phasePendingReviews = phaseTasks.filter(
+        (t) => t.status === TASK_STATUS.SUBMITTED
+      ).length;
+      const phaseOverdue = phaseTasks.filter(
+        (t) =>
+          t.dueDate &&
+          new Date(t.dueDate) < today &&
+          [
+            TASK_STATUS.ASSIGNED,
+            TASK_STATUS.ACCEPTED,
+            TASK_STATUS.IN_PROGRESS,
+          ].includes(t.status)
+      ).length;
+
+      const phaseCompDenom =
+        phaseTotal -
+        phaseTasks.filter((t) => t.status === TASK_STATUS.WITHDRAWN).length;
+      const phaseCompletionRate =
+        phaseCompDenom > 0
+          ? Number(((phaseCompleted / phaseCompDenom) * 100).toFixed(2))
+          : 0;
+
+      return {
+        phaseId: phaseDoc._id,
+        name: phaseDoc.name,
+        status: phaseDoc.status,
+        totalTasks: phaseTotal,
+        activeTasks: phaseActive,
+        completedTasks: phaseCompleted,
+        pendingReviews: phasePendingReviews,
+        overdueTasks: phaseOverdue,
+        completionRate: phaseCompletionRate,
+      };
+    })
+  );
+
+  /* -------------------------------------------------------
      Return metrics
      ------------------------------------------------------- */
 
@@ -198,8 +267,11 @@ const getProjectMetrics = async (projectId, user) => {
     totalTasks,
     activeTasks,
     completedTasks,
+    pendingReviews,
     overdueTasks,
     completionRate,
+    phaseCount: phaseMetrics.length,
+    phases: phaseMetrics,
     taskStatusDistribution,
     memberWorkload: metrics.memberWorkload,
   };

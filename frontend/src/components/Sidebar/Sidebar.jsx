@@ -12,6 +12,7 @@ import {
   FiAward,
   FiColumns,
   FiPieChart,
+  FiCpu,
 } from "react-icons/fi";
 
 import { ROUTES } from "../../constants/routes";
@@ -141,6 +142,15 @@ function Sidebar({ collapsed, mobileOpen, setMobileOpen }) {
           >
             <FiPieChart />
             <span>Role Insights</span>
+          </NavLink>
+
+          <NavLink
+            to={ROUTES.AI_REPORTS}
+            className={navClass}
+            onClick={() => setMobileOpen(false)}
+          >
+            <FiCpu />
+            <span>AI Reports</span>
           </NavLink>
 
           <NavLink

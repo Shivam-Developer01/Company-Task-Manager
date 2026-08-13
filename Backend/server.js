@@ -17,6 +17,7 @@ const notificationRoutes = require("./routes/notificationRoutes");
 const departmentRoutes = require("./routes/departmentRoutes");
 const designationRoutes = require("./routes/designationRoutes");
 const analyticsRoutes = require("./routes/analyticsRoutes");
+const aiRoutes = require("./routes/aiRoutes");
 
 const errorHandler = require("./middleware/errorHandler");
 
@@ -45,6 +46,7 @@ app.use("/api/notifications", notificationRoutes);
 app.use("/api/departments", departmentRoutes);
 app.use("/api/designations", designationRoutes);
 app.use("/api/analytics", analyticsRoutes);
+app.use("/api/ai", aiRoutes);
 
 app.use(errorHandler);
 

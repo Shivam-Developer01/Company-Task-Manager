@@ -19,11 +19,12 @@ import {
   FiAlertCircle,
   FiClock,
   FiInfo,
-  FiCalendar,
   FiUser,
+  FiCalendar,
 } from "react-icons/fi";
 import analyticsService from "../../services/analyticsService";
 import userService from "../../services/userService";
+import projectService from "../../services/projectService";
 import Loader from "../../components/Loader/Loader";
 import {
   ResponsiveContainer,
@@ -2623,9 +2624,9 @@ function RoleInsights() {
         )}
       </div>
     )}
-  </div>
-</div>
-);
+      </div>
+    </div>
+  );
 }
 
 export default RoleInsights;

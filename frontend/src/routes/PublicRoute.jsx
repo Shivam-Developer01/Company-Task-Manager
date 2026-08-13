@@ -2,7 +2,16 @@ import { Navigate } from "react-router-dom";
 
 function PublicRoute({ children }) {
   const token = localStorage.getItem("accessToken");
-  const user = JSON.parse(localStorage.getItem("user"));
+  let user = null;
+
+  try {
+    const rawUser = localStorage.getItem("user");
+    if (rawUser && rawUser !== "undefined") {
+      user = JSON.parse(rawUser);
+    }
+  } catch (e) {
+    user = null;
+  }
 
   if (token && user) {
     if (user.role === "manager" || user.role === "admin") {
