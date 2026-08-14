@@ -51,6 +51,8 @@
   border: 1px solid #cbd5e1;
   padding: 10px 18px;
   border-radius: 10px;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .perspective-selector-card label {
@@ -62,6 +64,8 @@
   color: #334155;
   text-transform: uppercase;
   letter-spacing: 0.6px;
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .perspective-dropdown {
@@ -76,6 +80,8 @@
   cursor: pointer;
   transition: all 0.2s ease;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .perspective-dropdown:hover {
@@ -461,7 +467,21 @@
 
   .perspective-selector-card {
     width: 100%;
-    justify-content: space-between;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+    padding: 12px 14px;
+    box-sizing: border-box;
+  }
+
+  .perspective-selector-card label {
+    width: 100%;
+  }
+
+  .perspective-dropdown {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
   }
 
   .cards-container,
