@@ -281,6 +281,7 @@ function Departments() {
         data={departments}
         loading={loading}
         emptyMessage="No departments found."
+        onRowClick={handleView}
       />
 
       <DepartmentModal

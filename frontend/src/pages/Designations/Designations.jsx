@@ -327,6 +327,7 @@ function Designations() {
         data={designations}
         loading={loading}
         emptyMessage="No designations found."
+        onRowClick={handleView}
       />
 
       <DesignationModal

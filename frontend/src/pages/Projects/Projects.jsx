@@ -418,6 +418,7 @@ function Projects() {
         data={projects}
         loading={loading}
         emptyMessage="No projects found."
+        onRowClick={handleView}
       />
 
       <Pagination

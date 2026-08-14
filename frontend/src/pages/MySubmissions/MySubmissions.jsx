@@ -229,6 +229,7 @@ function MySubmissions() {
         data={submissions}
         loading={loading}
         emptyMessage="No submissions found."
+        onRowClick={handleView}
       />
 
       <Pagination

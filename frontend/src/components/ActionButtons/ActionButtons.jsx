@@ -9,7 +9,10 @@ function ActionButtons({ actions = [] }) {
           type="button"
           title={action.title}
           className={`icon-action ${action.variant || ""}`}
-          onClick={action.onClick}
+          onClick={(e) => {
+            e.stopPropagation();
+            if (action.onClick) action.onClick(e);
+          }}
           disabled={action.disabled}
         >
           {action.icon}

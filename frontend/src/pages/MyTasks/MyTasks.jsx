@@ -447,6 +447,7 @@ function MyTasks() {
         data={tasks}
         loading={loading}
         emptyMessage="No tasks found."
+        onRowClick={handleView}
       />
 
       <Pagination

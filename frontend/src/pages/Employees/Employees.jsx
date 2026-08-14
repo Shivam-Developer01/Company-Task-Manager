@@ -463,6 +463,7 @@ function Employees() {
         data={employees}
         loading={loading}
         emptyMessage="No employees found."
+        onRowClick={handleView}
       />
 
       <EmployeeModal
