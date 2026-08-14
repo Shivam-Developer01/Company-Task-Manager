@@ -1,12 +1,20 @@
 const User = require("../../models/User");
 const Department = require("../../models/Department");
 const Designation = require("../../models/Designation");
+const Task = require("../../models/Task");
+const mongoose = require("mongoose");
+const createActivity = require("../../utils/createActivity");
+const createNotification = require("../../utils/createNotification");
 
 const CustomError = require("../../errors/CustomError");
 
 const bcrypt = require("bcryptjs");
 
-const { ROLES } = require("../../constants/constants");
+const {
+  ROLES,
+  TASK_STATUS,
+  NOTIFICATION_TYPE,
+} = require("../../constants/constants");
 
 const generateTempPassword = () => {
   const chars =
@@ -304,6 +312,35 @@ const updateUser = async (req, res) => {
   });
 };
 
+const getUserActiveTasksCount = async (req, res) => {
+  const { id } = req.params;
+
+  const user = await User.findById(id);
+
+  if (!user) {
+    throw new CustomError("User not found", 404);
+  }
+
+  const activeStatuses = [
+    TASK_STATUS.ASSIGNED,
+    TASK_STATUS.ACCEPTED,
+    TASK_STATUS.IN_PROGRESS,
+    TASK_STATUS.SUBMITTED,
+    TASK_STATUS.TASK_REJECTED,
+  ];
+
+  const count = await Task.countDocuments({
+    assignedTo: id,
+    status: { $in: activeStatuses },
+    isArchived: { $ne: true },
+  });
+
+  res.status(200).json({
+    success: true,
+    count,
+  });
+};
+
 const toggleUserStatus = async (req, res) => {
   const { id } = req.params;
 
@@ -323,15 +360,94 @@ const toggleUserStatus = async (req, res) => {
     throw new CustomError("Forbidden", 403);
   }
 
-  user.isActive = !user.isActive;
-  user.updatedBy = req.user.userId;
+  const willDeactivate = user.isActive;
+  let withdrawnTasksCount = 0;
 
-  await user.save();
+  if (willDeactivate) {
+    const activeStatuses = [
+      TASK_STATUS.ASSIGNED,
+      TASK_STATUS.ACCEPTED,
+      TASK_STATUS.IN_PROGRESS,
+      TASK_STATUS.SUBMITTED,
+      TASK_STATUS.TASK_REJECTED,
+    ];
+
+    const activeTasks = await Task.find({
+      assignedTo: user._id,
+      status: { $in: activeStatuses },
+      isArchived: { $ne: true },
+    });
+
+    withdrawnTasksCount = activeTasks.length;
+
+    let session = null;
+    try {
+      session = await mongoose.startSession();
+      session.startTransaction();
+    } catch {
+      session = null;
+    }
+
+    try {
+      for (const task of activeTasks) {
+        task.status = TASK_STATUS.WITHDRAWN;
+        task.updatedBy = req.user.userId;
+
+        await task.save(session ? { session } : {});
+
+        await createActivity({
+          task: task._id,
+          action: NOTIFICATION_TYPE.TASK_WITHDRAWN,
+          performedBy: req.user.userId,
+          details: "Task automatically withdrawn due to employee deactivation.",
+        });
+
+        await createNotification({
+          user: task.assignedTo,
+          title: "Task Withdrawn",
+          message: `Task "${task.title}" has been automatically withdrawn due to account deactivation.`,
+          type: NOTIFICATION_TYPE.TASK_WITHDRAWN,
+          task: task._id,
+        });
+      }
+
+      user.isActive = false;
+      user.updatedBy = req.user.userId;
+
+      await user.save(session ? { session } : {});
+
+      if (session) {
+        await session.commitTransaction();
+      }
+    } catch (error) {
+      if (session) {
+        await session.abortTransaction();
+      }
+      throw error;
+    } finally {
+      if (session) {
+        session.endSession();
+      }
+    }
+  } else {
+    // Reactivation
+    user.isActive = true;
+    user.updatedBy = req.user.userId;
+    await user.save();
+  }
+
+  let message = `User ${user.isActive ? "activated" : "deactivated"} successfully.`;
+  if (!user.isActive && withdrawnTasksCount > 0) {
+    message = `Employee deactivated successfully. ${withdrawnTasksCount} active task${withdrawnTasksCount === 1 ? "" : "s"} ${withdrawnTasksCount === 1 ? "was" : "were"} withdrawn.`;
+  } else if (!user.isActive) {
+    message = "Employee deactivated successfully.";
+  }
 
   res.status(200).json({
     success: true,
-    message: `User ${user.isActive ? "activated" : "deactivated"} successfully`,
+    message,
     data: user,
+    withdrawnTasksCount,
   });
 };
 
@@ -383,4 +499,5 @@ module.exports = {
   updateUser,
   toggleUserStatus,
   resetUserPassword,
+  getUserActiveTasksCount,
 };

@@ -1,3 +1,20 @@
+.submissions-page {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.submission-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  max-width: 100%;
+}
+
 .overdue-date {
   color: #dc2626;
   font-weight: 600;

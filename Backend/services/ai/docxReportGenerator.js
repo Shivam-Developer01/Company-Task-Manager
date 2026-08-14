@@ -87,7 +87,7 @@ const generateReportDocxBuffer = async (reportPayload) => {
     })
   );
 
-  const metricPairs = extractMetricPairs(sourceMetrics);
+  const metricPairs = extractMetricPairs(sourceMetrics, reportData.reportType);
   if (metricPairs.length > 0) {
     const tableRows = [
       new TableRow({

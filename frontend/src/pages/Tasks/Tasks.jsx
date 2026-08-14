@@ -47,7 +47,14 @@ function Tasks() {
 
   const debouncedSearch = useDebounce(search);
 
-  const [status, setStatus] = useState("");
+  const [status, setStatus] = useState(() => searchParams.get("status") || "");
+
+  useEffect(() => {
+    const statusParam = searchParams.get("status");
+    if (statusParam !== null) {
+      setStatus(statusParam);
+    }
+  }, [searchParams]);
 
   const [priority, setPriority] = useState("");
 
@@ -113,6 +120,9 @@ function Tasks() {
     try {
       setLoading(true);
 
+      const filterParam = searchParams.get("filter");
+      const statusParam = searchParams.get("status");
+
       const params = {
         page,
         search: debouncedSearch,
@@ -123,6 +133,13 @@ function Tasks() {
 
       if (status !== "") {
         params.status = status;
+      } else if (statusParam) {
+        params.status = statusParam;
+      }
+
+      if (filterParam) {
+        params[filterParam] = "true";
+        params.filter = filterParam;
       }
 
       if (priority) {
@@ -145,29 +162,54 @@ function Tasks() {
   };
 
   useEffect(() => {
-    const taskId = searchParams.get("task");
+    const taskId = searchParams.get("task") || searchParams.get("taskId");
     const action = searchParams.get("action");
 
-    if (!taskId || tasks.length === 0) return;
+    if (!taskId) return;
 
-    const task = tasks.find((t) => t._id === taskId);
+    let isSubscribed = true;
 
-    if (!task) return;
+    const openTaskFromParam = async () => {
+      let task = tasks.find((t) => t._id === taskId);
+      if (!task) {
+        try {
+          const response = await taskService.getTask(taskId);
+          task = response.data;
+        } catch (error) {
+          if (isSubscribed) {
+            toast.error(error.response?.data?.message || "Task not found or access denied.");
+            const params = new URLSearchParams(searchParams);
+            params.delete("task");
+            params.delete("taskId");
+            params.delete("action");
+            setSearchParams(params, { replace: true });
+          }
+          return;
+        }
+      }
 
-    handleView(task);
+      if (task && isSubscribed) {
+        handleView(task);
+        if (action === "reassign") {
+          setSelectedTask(task);
+          setReassignOpen(true);
+        }
+        const params = new URLSearchParams(searchParams);
+        params.delete("task");
+        params.delete("taskId");
+        params.delete("action");
+        setSearchParams(params, { replace: true });
+      }
+    };
 
-    if (action === "reassign") {
-      setSelectedTask(task);
-      setReassignOpen(true);
+    if (!loading) {
+      openTaskFromParam();
     }
 
-    const params = new URLSearchParams(searchParams);
-
-    params.delete("task");
-    params.delete("action");
-
-    setSearchParams(params, { replace: true });
-  }, [tasks]);
+    return () => {
+      isSubscribed = false;
+    };
+  }, [tasks, loading, searchParams, handleView]);
 
   const fetchEmployees = async () => {
     try {
@@ -596,6 +638,7 @@ function Tasks() {
       </div>
 
       <DataTable
+        headerColor="#2563eb"
         columns={columns}
         data={tasks}
         loading={loading}

@@ -1,6 +1,6 @@
 import "./ProjectMembersCard.css";
 
-function ProjectMembersCard({ members }) {
+function ProjectMembersCard({ members = [], onMemberClick }) {
   return (
     <div className="chart-card project-members-card">
       <h3>👥 Project Members</h3>
@@ -18,7 +18,11 @@ function ProjectMembersCard({ members }) {
           <tbody>
             {members.length > 0 ? (
               members.map((member) => (
-                <tr key={member._id}>
+                <tr
+                  key={member._id || member.id}
+                  className={onMemberClick ? "clickable-row" : ""}
+                  onClick={() => onMemberClick && onMemberClick(member)}
+                >
                   <td>{member.name}</td>
                   <td>{member.role}</td>
                   <td>{member.activeTasks ?? "-"}</td>

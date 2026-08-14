@@ -23,7 +23,10 @@ import ConfirmationModal from "../../components/ConfirmationModal/ConfirmationMo
 
 import { toast } from "react-toastify";
 
+import { useSearchParams } from "react-router-dom";
+
 function Employees() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [employees, setEmployees] = useState([]);
 
   const [loading, setLoading] = useState(true);
@@ -107,6 +110,43 @@ function Employees() {
     setDrawerOpen(true);
   }, []);
 
+  useEffect(() => {
+    const userId = searchParams.get("user") || searchParams.get("employee");
+    if (!userId) return;
+
+    const userObj = employees.find(
+      (e) => (e._id || e.id) === userId,
+    );
+
+    if (userObj) {
+      handleView(userObj);
+      const params = new URLSearchParams(searchParams);
+      params.delete("user");
+      params.delete("employee");
+      params.delete("source");
+      setSearchParams(params, { replace: true });
+    } else if (!loading) {
+      userService
+        .getUser(userId)
+        .then((res) => {
+          if (res.data) {
+            handleView(res.data);
+          }
+        })
+        .catch((err) => {
+          console.error("Unable to load user:", err);
+          toast.error("User not found or access denied.");
+        })
+        .finally(() => {
+          const params = new URLSearchParams(searchParams);
+          params.delete("user");
+          params.delete("employee");
+          params.delete("source");
+          setSearchParams(params, { replace: true });
+        });
+    }
+  }, [employees, loading, searchParams, setSearchParams, handleView]);
+
   const handleEdit = useCallback(
     (employee) => {
       if (employee.role === "admin" && employee._id !== currentUser._id) {
@@ -140,7 +180,7 @@ function Employees() {
     setConfirmationOpen(true);
   }, []);
 
-  const handleStatus = useCallback((employee) => {
+  const handleStatus = useCallback(async (employee) => {
     if (employee.role === "admin") {
       toast.error(
         employee.isActive ? "Can't deactivate Admin" : "Can't activate Admin",
@@ -150,17 +190,42 @@ function Employees() {
 
     setSelectedEmployee(employee);
 
-    setConfirmationConfig({
-      title: employee.isActive ? "Deactivate User?" : "Activate User?",
+    if (employee.isActive) {
+      let count = 0;
+      try {
+        const countRes = await userService.getActiveTasksCount(employee._id);
+        count = countRes.count || 0;
+      } catch {
+        count = 0;
+      }
 
-      message: employee.isActive
-        ? "This user will no longer be able to login until activated again."
-        : "This user will be able to login again.",
-
-      confirmText: employee.isActive ? "Deactivate" : "Activate",
-
-      confirmType: employee.isActive ? "danger" : "success",
-    });
+      if (count > 0) {
+        setConfirmationConfig({
+          title: "Deactivate User?",
+          message: `This employee has ${count} active assigned task${count === 1 ? "" : "s"}. Deactivating this employee will withdraw ${count === 1 ? "this task" : "these tasks"}. Do you want to continue?`,
+          confirmText: "Continue & Deactivate",
+          confirmType: "danger",
+          action: "toggleStatus",
+        });
+      } else {
+        setConfirmationConfig({
+          title: "Deactivate User?",
+          message:
+            "This user will no longer be able to login until activated again.",
+          confirmText: "Deactivate",
+          confirmType: "danger",
+          action: "toggleStatus",
+        });
+      }
+    } else {
+      setConfirmationConfig({
+        title: "Activate User?",
+        message: "This user will be able to login again.",
+        confirmText: "Activate",
+        confirmType: "success",
+        action: "toggleStatus",
+      });
+    }
 
     setConfirmationOpen(true);
   }, []);
@@ -393,6 +458,7 @@ function Employees() {
       </div>
 
       <DataTable
+        headerColor="#2563eb"
         columns={columns}
         data={employees}
         loading={loading}

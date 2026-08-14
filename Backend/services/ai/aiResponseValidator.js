@@ -23,6 +23,7 @@ const sanitizeAiString = (str) => {
     .replace(/javascript\s*:/gi, "")
     .replace(/on\w+\s*=\s*"[^"]*"/gi, "")
     .replace(/on\w+\s*=\s*'[^']*'/gi, "")
+    .replace(/[\r\n]+/g, " ")
     .trim();
 };
 

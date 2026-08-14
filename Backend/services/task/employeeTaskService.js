@@ -13,7 +13,7 @@ const { TASK_STATUS, NOTIFICATION_TYPE } = require("../../constants/constants");
 const { getAccessibleTask } = require("../access/taskAccess");
 
 const getMyTasks = async (req, res) => {
-  const { search, status, priority, project, page = 1, limit = 10 } = req.query;
+  const { search, status, priority, project, filter, page = 1, limit = 10 } = req.query;
 
   const query = {
     assignedTo: req.user.userId,
@@ -51,6 +51,18 @@ const getMyTasks = async (req, res) => {
     } else {
       query.project = project;
     }
+  }
+
+  if (filter === "overdue" || req.query.overdue === "true") {
+    query.dueDate = { $lt: new Date() };
+    query.status = { $in: [TASK_STATUS.ASSIGNED, TASK_STATUS.ACCEPTED, TASK_STATUS.IN_PROGRESS] };
+  } else if (filter === "dueSoon" || req.query.dueSoon === "true") {
+    const today = new Date();
+    query.dueDate = {
+      $gte: today,
+      $lte: new Date(today.getTime() + 3 * 24 * 60 * 60 * 1000),
+    };
+    query.status = { $in: [TASK_STATUS.ASSIGNED, TASK_STATUS.ACCEPTED, TASK_STATUS.IN_PROGRESS] };
   }
 
   const skip = (Number(page) - 1) * Number(limit);

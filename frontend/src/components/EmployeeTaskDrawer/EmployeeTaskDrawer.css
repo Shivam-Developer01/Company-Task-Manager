@@ -94,16 +94,29 @@
 
   color: #334155;
 }
+.task-d-badges {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+
+.task-d-badges .status-badge,
 .priority-d-chip {
-  margin-top: 14px;
-
-  padding: 8px 16px;
-
-  border-radius: 999px;
-
-  font-size: 13px;
-
-  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 26px;
+  padding: 4px 12px;
+  margin: 0;
+  box-sizing: border-box;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+  border-radius: 20px;
+  white-space: nowrap;
 }
 .priority-d-chip.low {
   background: #ecfdf5;

@@ -1,90 +1,110 @@
-/* ===========================
-          Header
-=========================== */
+/* Submissions View Sidebar Styling */
 
 .submission-d-header {
   display: flex;
-  gap: 18px;
+  gap: 16px;
   align-items: center;
-
+  padding: 18px 16px;
   margin-bottom: 24px;
+  background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
 }
 
 .submission-d-avatar {
-  width: 76px;
-  height: 76px;
-
-  border-radius: 18px;
-
-  background: linear-gradient(135deg, #2563eb, #3b82f6);
-
+  width: 64px;
+  height: 64px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
   display: flex;
   align-items: center;
   justify-content: center;
-
-  font-size: 34px;
-
-  color: white;
-
+  font-size: 28px;
+  color: #ffffff;
   flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.2);
 }
 
 .submission-d-title {
   flex: 1;
+  min-width: 0;
 }
 
 .submission-d-title h2 {
   margin: 0;
-
-  font-size: 26px;
+  font-size: 18px;
   font-weight: 700;
-
-  color: #111827;
+  color: #0f172a;
+  line-height: 1.3;
 }
 
 .submission-d-title small {
-  color: #6b7280;
-  font-size: 13px;
+  color: #64748b;
+  font-size: 12.5px;
+  display: block;
+  margin-top: 2px;
 }
 
 .submission-status {
-  margin-top: 14px;
+  margin-top: 10px;
 }
 
-/* ===========================
-        Attachments
-=========================== */
+.submission-summary {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 20px;
+  margin-bottom: 24px;
+}
+
+.submission-summary div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.submission-summary label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #64748b;
+}
+
+.submission-summary span {
+  font-size: 13.5px;
+  font-weight: 500;
+  color: #0f172a;
+  word-break: break-word;
+}
 
 .attachment-d-list {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
 }
 
 .attachment-card {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 16px;
-
-  padding: 14px 16px;
-
-  border: 1px solid #e5e7eb;
-  border-radius: 12px;
-
+  gap: 14px;
+  padding: 12px 14px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
   background: #ffffff;
-
   text-decoration: none;
   color: inherit;
-
-  transition: all 0.25s ease;
+  transition: all 0.15s ease;
 }
 
 .attachment-card:hover {
-  border-color: #2563eb;
-  background: #f8fbff;
-  transform: translateY(-2px);
-  box-shadow: 0 6px 18px rgba(37, 99, 235, 0.12);
+  border-color: #8b5cf6;
+  background: #f8fafc;
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.08);
 }
 
 .attachment-card div {
@@ -94,12 +114,9 @@
 
 .attachment-card strong {
   display: block;
-
-  font-size: 15px;
+  font-size: 13.5px;
   font-weight: 600;
-
-  color: #111827;
-
+  color: #0f172a;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -107,64 +124,45 @@
 
 .attachment-card small {
   display: block;
-
-  margin-top: 4px;
-
-  font-size: 13px;
-  color: #6b7280;
+  margin-top: 2px;
+  font-size: 12px;
+  color: #64748b;
 }
 
 .attachment-card span {
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 600;
-
-  color: #2563eb;
-
+  color: #8b5cf6;
   flex-shrink: 0;
 }
 
 .attachment-info {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   flex: 1;
   min-width: 0;
 }
 
 .attachment-icon {
-  font-size: 22px;
-  color: #2563eb;
+  font-size: 20px;
+  color: #8b5cf6;
   flex-shrink: 0;
 }
 
 .download-icon {
-  font-size: 20px;
-  color: #2563eb;
+  font-size: 18px;
+  color: #8b5cf6;
   flex-shrink: 0;
-}
-
-/* ===========================
-      Responsive
-=========================== */
-
-@media (max-width: 768px) {
-  .submission-d-header {
-    flex-direction: column;
-    text-align: center;
-  }
-
-  .submission-summary {
-    grid-template-columns: 1fr;
-  }
 }
 
 .submission-hierarchy-banner {
   background: #f8fafc;
   border: 1px solid #e2e8f0;
   border-radius: 8px;
-  padding: 8px 14px;
+  padding: 8px 12px;
   margin-bottom: 16px;
-  font-size: 13px;
+  font-size: 12.5px;
   color: #334155;
 }
 
@@ -176,16 +174,36 @@
 }
 
 .phase-text-badge {
-  color: #2563eb !important;
+  color: #8b5cf6 !important;
   font-weight: 600 !important;
 }
 
 .phase-chip {
-  background: #eff6ff;
-  color: #2563eb;
-  border: 1px solid #bfdbfe;
+  background: #f3e8ff;
+  color: #7e22ce;
+  border: 1px solid #e9d5ff;
   padding: 2px 8px;
   border-radius: 6px;
   font-size: 12px;
   font-weight: 600;
+}
+
+@media (max-width: 768px) {
+  .submission-d-header {
+    flex-direction: row;
+    align-items: center;
+    text-align: left;
+  }
+
+  .submission-summary {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .submission-summary {
+    grid-template-columns: 1fr;
+    gap: 14px;
+    padding: 16px;
+  }
 }

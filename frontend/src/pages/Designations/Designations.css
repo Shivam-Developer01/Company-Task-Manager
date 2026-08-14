@@ -2,88 +2,126 @@
   display: flex;
   flex-direction: column;
   gap: 20px;
+  min-width: 0;
+  max-width: 100%;
 }
 
+.designation-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  max-width: 100%;
+}
+
+.designation-top > div {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+/* Designation View Sidebar Styling */
 .designation-profile {
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
-  padding-bottom: 24px;
-  border-bottom: 1px solid #e5e7eb;
+  padding: 20px 16px;
+  margin-bottom: 24px;
+  background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
 }
 
 .profile-avatar {
   width: 72px;
   height: 72px;
   border-radius: 50%;
-  background: #2563eb;
-  color: #fff;
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  color: #ffffff;
   font-size: 28px;
-  font-weight: 600;
+  font-weight: 700;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.2);
 }
 
 .designation-profile h3 {
   margin: 0;
   font-size: 20px;
-  font-weight: 600;
+  font-weight: 700;
+  color: #0f172a;
 }
 
 .designation-profile p {
-  margin: 6px 0 14px;
-  color: #6b7280;
-  font-size: 14px;
+  margin: 4px 0 12px;
+  color: #64748b;
+  font-size: 13.5px;
+  font-weight: 500;
 }
 
 .designation-details {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
   gap: 16px;
-  margin-top: 24px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 20px;
+  margin-bottom: 24px;
 }
 
 .detail-item {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
 }
 
 .detail-item label {
-  font-size: 13px;
-  color: #6b7280;
-  font-weight: 600;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #64748b;
 }
 
 .detail-item span {
-  font-size: 15px;
-  color: #111827;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: #0f172a;
   word-break: break-word;
 }
 
 .drawer-actions {
   display: flex;
-  gap: 12px;
-  margin-top: 30px;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid #e2e8f0;
 }
 
 .drawer-btn {
-  flex: 1;
+  width: 100%;
   border: none;
-  border-radius: 8px;
+  border-radius: 10px;
   padding: 11px 16px;
-  font-size: 14px;
-  font-weight: 500;
+  font-size: 13.5px;
+  font-weight: 600;
   cursor: pointer;
-  transition: 0.2s ease;
+  transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .edit-btn {
   background: #2563eb;
-  color: #fff;
+  color: #ffffff;
 }
 
 .edit-btn:hover {
@@ -92,7 +130,7 @@
 
 .danger-btn {
   background: #dc2626;
-  color: #fff;
+  color: #ffffff;
 }
 
 .danger-btn:hover {
@@ -101,7 +139,7 @@
 
 .success-btn {
   background: #16a34a;
-  color: #fff;
+  color: #ffffff;
 }
 
 .success-btn:hover {
@@ -109,11 +147,16 @@
 }
 
 @media (max-width: 768px) {
-  .drawer-actions {
+  .designation-top {
     flex-direction: column;
+    align-items: stretch;
   }
+}
 
-  .drawer-btn {
-    width: 100%;
+@media (max-width: 480px) {
+  .designation-details {
+    grid-template-columns: 1fr;
+    gap: 14px;
+    padding: 16px;
   }
 }

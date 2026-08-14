@@ -12,6 +12,19 @@ function PendingReviewsCard({
 }) {
   const navigate = useNavigate();
 
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
+  const taskBaseUrl = user?.role === "employee" ? "/employee/tasks" : "/tasks";
+
+  const handleRowClick = (review) => {
+    const taskId =
+      review.task?._id ||
+      (typeof review.task === "string" ? review.task : null);
+
+    if (taskId) {
+      navigate(`${taskBaseUrl}?task=${taskId}`);
+    }
+  };
+
   return (
     <div className="dashboard-card">
       <div className="dashboard-card-header">
@@ -33,23 +46,34 @@ function PendingReviewsCard({
         </div>
       ) : (
         <div className="review-list">
-          {reviews.map((review) => (
-            <div key={review._id} className="review-item">
-              <div className="review-content">
-                <h4>{review.task?.title}</h4>
+          {reviews.map((review) => {
+            const taskId =
+              review.task?._id ||
+              (typeof review.task === "string" ? review.task : null);
+            const isClickable = Boolean(taskId);
 
-                <p>
-                  {review.submittedBy?.name}
-                  {review.submittedBy?.employeeId &&
-                    ` (${review.submittedBy.employeeId})`}
-                </p>
+            return (
+              <div
+                key={review._id}
+                className={`review-item ${isClickable ? "clickable" : ""}`}
+                onClick={() => isClickable && handleRowClick(review)}
+              >
+                <div className="review-content">
+                  <h4>{review.task?.title || "Task Submission"}</h4>
+
+                  <p>
+                    {review.submittedBy?.name}
+                    {review.submittedBy?.employeeId &&
+                      ` (${review.submittedBy.employeeId})`}
+                  </p>
+                </div>
+
+                <span className="review-time">
+                  {formatRelativeTime(review.createdAt)}
+                </span>
               </div>
-
-              <span className="review-time">
-                {formatRelativeTime(review.createdAt)}
-              </span>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

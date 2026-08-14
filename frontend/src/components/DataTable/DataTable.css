@@ -1,178 +1,196 @@
-.table-wrapper {
-  background: white;
-
-  border-radius: 16px;
-
-  overflow-x: auto;
-
-  overflow-y: visible;
-
-  box-shadow: 0 6px 20px rgba(15, 23, 42, 0.06);
+/* Outer Card Container */
+.table-card {
+  background: #ffffff;
+  border-radius: 14px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.03);
+  overflow: hidden;
+  width: 100%;
+  max-width: 100%;
+  margin-bottom: 16px;
+  min-width: 0;
 }
 
+/* Inner Table Scroll Container */
+.table-scroll-container {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  min-width: 0;
+}
+
+/* Custom Scrollbar Styling */
+.table-scroll-container::-webkit-scrollbar {
+  height: 6px;
+}
+
+.table-scroll-container::-webkit-scrollbar-track {
+  background: #f8fafc;
+}
+
+.table-scroll-container::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+.table-scroll-container::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Table Base Styles */
 .data-table {
   width: 100%;
-
   border-collapse: collapse;
+  text-align: left;
+  font-size: 13.5px;
 }
 
 .data-table thead {
-  background: #f8fafc;
-
-  position: sticky;
-
-  top: 0;
-
-  z-index: 20;
+  background: var(--header-bg, #2563eb);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
 }
 
 .data-table th {
-  padding: 16px;
-
-  text-align: center;
-
-  font-size: 14px;
-
+  padding: 14px 18px;
   font-weight: 600;
-
-  color: #475569;
-
-  border-bottom: 1px solid #e2e8f0;
-
+  font-size: 12.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #ffffff;
   white-space: nowrap;
+  background: var(--header-bg, #2563eb);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  vertical-align: middle;
+}
 
-  background: #f8fafc;
-
-  position: relative;
-
-  top: 0;
+.th-content {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .data-table td {
-  padding: 16px;
-
-  border-bottom: 1px solid #edf2f7;
-
-  font-size: 14px;
-
-  color: #334155;
+  padding: 14px 18px;
+  border-bottom: 1px solid #f1f5f9;
+  color: #1e293b;
+  vertical-align: middle;
+  font-size: 13.5px;
 }
 
+/* Clean Row Hover Transition */
 .data-table tbody tr {
-  transition: 0.2s;
+  transition: background-color 0.15s ease;
 }
 
 .data-table tbody tr:hover {
-  background: #eef6ff;
-
-  transform: scale(1.003);
+  background-color: #f8fafc;
 }
 
+.data-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* Empty State Styling */
 .empty-cell {
-  padding: 60px;
+  padding: 48px 24px;
+  text-align: center;
 }
 
 .empty-state {
   display: flex;
-
   flex-direction: column;
-
   align-items: center;
-
-  gap: 14px;
+  gap: 10px;
 }
 
 .empty-icon {
-  font-size: 56px;
+  font-size: 42px;
+  opacity: 0.8;
 }
 
 .empty-state h3 {
   margin: 0;
-
-  font-size: 22px;
-
-  color: #0f172a;
+  font-size: 17px;
+  font-weight: 600;
+  color: #1e293b;
 }
 
 .empty-state p {
   margin: 0;
-
+  font-size: 13.5px;
   color: #64748b;
 }
 
+/* Skeleton Loading Animation */
 .skeleton-cell {
-  height: 16px;
-
-  width: 100%;
-
-  border-radius: 8px;
-
+  height: 14px;
+  width: 80%;
+  border-radius: 6px;
   background: linear-gradient(90deg, #edf2f7 25%, #f8fafc 50%, #edf2f7 75%);
-
   background-size: 200% 100%;
-
   animation: skeleton-loading 1.3s infinite;
-}
-
-.sortable {
-  cursor: pointer;
-
-  user-select: none;
-
-  transition: 0.25s;
-}
-
-.sortable:hover {
-  color: #2563eb;
-}
-
-.sort-arrow {
-  margin-left: 8px;
-
-  font-size: 11px;
 }
 
 @keyframes skeleton-loading {
   0% {
     background-position: 200% 0;
   }
-
   100% {
     background-position: -200% 0;
   }
 }
 
-@media (min-width: 992px) {
-  .data-table {
-    min-width: 100%;
-  }
+/* Sortable Headers */
+.sortable {
+  cursor: pointer;
+  user-select: none;
+  transition: opacity 0.15s ease;
 }
 
+.sortable:hover {
+  opacity: 0.9;
+}
+
+.sort-arrow {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.sort-arrow.active {
+  color: #ffffff;
+  font-weight: bold;
+}
+
+/* Responsive Table Column Sizing */
 @media (max-width: 991px) {
   .data-table {
-    min-width: 900px;
+    min-width: 750px;
   }
 }
 
-/* Sticky Actions Column */
-
+/* Sticky Actions Column on Desktop */
 @media (min-width: 992px) {
   .data-table th:last-child,
   .data-table td:last-child {
     position: sticky;
-
     right: 0;
+    z-index: 10;
+  }
 
-    background: white;
-
-    z-index: 15;
-
-    box-shadow: -4px 0 8px rgba(15, 23, 42, 0.05);
+  .data-table td:last-child {
+    background: #ffffff;
+    box-shadow: -3px 0 6px rgba(15, 23, 42, 0.03);
   }
 
   .data-table th:last-child {
-    background: #f8fafc;
+    background: var(--header-bg, #2563eb);
+    z-index: 11;
+    box-shadow: -3px 0 6px rgba(15, 23, 42, 0.08);
+  }
 
-    z-index: 25;
+  .data-table tbody tr:hover td:last-child {
+    background: #f8fafc;
   }
 }

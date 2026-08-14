@@ -1,171 +1,179 @@
+/* Tasks View Sidebar Styling */
 .task-d-header {
   display: flex;
-
   flex-direction: column;
-
   align-items: center;
-
   text-align: center;
-
-  padding-bottom: 24px;
-
-  border-bottom: 1px solid #e2e8f0;
-
+  padding: 20px 16px;
   margin-bottom: 24px;
+  background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
 }
+
 .task-d-avatar {
-  width: 70px;
-
-  height: 70px;
-
+  width: 68px;
+  height: 68px;
   border-radius: 50%;
-
-  background: #2563eb;
-
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
   color: white;
-
   display: flex;
-
   align-items: center;
-
   justify-content: center;
-
-  font-size: 28px;
-
+  font-size: 26px;
   font-weight: 700;
-
-  margin-bottom: 16px;
+  margin-bottom: 12px;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
 }
 
 .task-d-header h2 {
-  margin: 0;
-
-  font-size: 24px;
-
+  margin: 0 0 10px 0;
+  font-size: 20px;
+  font-weight: 700;
   color: #0f172a;
+  line-height: 1.3;
 }
 
 .task-d-section {
-  margin-bottom: 28px;
+  margin-bottom: 24px;
 }
+
 .task-d-section h4 {
-  margin-bottom: 14px;
-
-  font-size: 15px;
-
+  margin-bottom: 10px;
+  font-size: 13px;
   font-weight: 700;
-
-  color: #1e293b;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #475569;
+  border-bottom: 1px solid #f1f5f9;
+  padding-bottom: 6px;
 }
+
 .task-d-section p {
   margin: 0;
-
-  line-height: 1.7;
-
-  color: #475569;
+  line-height: 1.6;
+  color: #334155;
+  font-size: 13.5px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-left: 4px solid #2563eb;
+  border-radius: 10px;
+  padding: 12px 14px;
 }
+
 .task-info-d-grid {
   display: grid;
-
-  grid-template-columns: 1fr 1fr;
-
-  gap: 18px;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 20px;
+  margin-bottom: 24px;
 }
+
 .task-info-d-grid div {
   display: flex;
-
   flex-direction: column;
-
-  gap: 6px;
+  gap: 4px;
 }
+
 .task-info-d-grid label {
-  font-size: 12px;
-
+  font-size: 11px;
   font-weight: 700;
-
   text-transform: uppercase;
-
-  color: #94a3b8;
+  letter-spacing: 0.04em;
+  color: #64748b;
 }
+
 .task-info-d-grid span {
-  font-size: 14px;
-
-  font-weight: 600;
-
-  color: #334155;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: #0f172a;
+  word-break: break-word;
 }
+
+.task-d-badges {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+
+.task-d-badges .status-badge,
 .priority-d-chip {
-  margin-top: 14px;
-
-  padding: 8px 16px;
-
-  border-radius: 999px;
-
-  font-size: 13px;
-
-  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 26px;
+  padding: 4px 12px;
+  margin: 0;
+  box-sizing: border-box;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+  border-radius: 20px;
+  white-space: nowrap;
 }
+
 .priority-d-chip.low {
-  background: #ecfdf5;
-
-  color: #047857;
+  background: #e0f2fe;
+  color: #0369a1;
+  border: 1px solid #bae6fd;
 }
+
 .priority-d-chip.medium {
-  background: #eff6ff;
-
-  color: #2563eb;
+  background: #fef3c7;
+  color: #b45309;
+  border: 1px solid #fde68a;
 }
+
 .priority-d-chip.high {
-  background: #fff7ed;
-
-  color: #ea580c;
+  background: #fee2e2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
 }
-.priority-d-chip.critical {
-  background: #fef2f2;
 
-  color: #dc2626;
+.priority-d-chip.critical {
+  background: #fee2e2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
 }
 
 .task-d-checklist {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
 }
 
 .checklist-d-row {
   display: flex;
   align-items: center;
   gap: 12px;
-
-  margin-bottom: 10px;
-  padding: 12px 14px;
-
+  padding: 10px 14px;
   background: #f8fafc;
-
   border: 1px solid #e2e8f0;
-
   border-radius: 10px;
+  font-size: 13.5px;
+  color: #1e293b;
 }
 
 .check-d-icon {
-  width: 24px;
-  height: 24px;
-
+  width: 22px;
+  height: 22px;
   border-radius: 50%;
-
   display: flex;
   align-items: center;
   justify-content: center;
-
   background: #e2e8f0;
-
-  font-size: 13px;
-
+  font-size: 12px;
   flex-shrink: 0;
 }
 
 .checklist-d-row.completed .check-d-icon {
-  background: #22c55e;
+  background: #16a34a;
   color: white;
 }
 
@@ -176,151 +184,134 @@
 
 .attachment-d-card {
   display: flex;
-
   justify-content: space-between;
-
   align-items: center;
-
-  padding: 14px;
-
+  padding: 12px 14px;
   border: 1px solid #e2e8f0;
-
   border-radius: 10px;
-
   background: white;
-
   margin-bottom: 10px;
-
   text-decoration: none;
-
   color: inherit;
-
-  transition: 0.2s;
+  transition: border-color 0.15s ease;
 }
+
 .attachment-d-card:hover {
   border-color: #2563eb;
-
-  background: #eff6ff;
-}
-.attachment-d-card div {
-  display: flex;
-
-  flex-direction: column;
-
-  gap: 4px;
-}
-.attachment-d-card small {
-  color: #64748b;
-
-  font-size: 12px;
-}
-.empty-d-text {
-  padding: 18px;
-
-  text-align: center;
-
-  border: 1px dashed #cbd5e1;
-
-  border-radius: 10px;
-
-  color: #64748b;
-
   background: #f8fafc;
 }
-.activity-d-timeline {
-  display: flex;
 
+.attachment-d-card div {
+  display: flex;
   flex-direction: column;
-
-  gap: 18px;
-
-  position: relative;
+  gap: 2px;
 }
-.timeline-d-item {
-  display: flex;
 
-  gap: 16px;
-
-  align-items: flex-start;
-}
-.timeline-d-dot {
-  width: 12px;
-
-  height: 12px;
-
-  border-radius: 50%;
-
-  background: #2563eb;
-
-  margin-top: 6px;
-
-  flex-shrink: 0;
-}
-.timeline-d-content {
-  flex: 1;
-
-  padding-bottom: 18px;
-
-  border-left: 2px solid #e2e8f0;
-
-  padding-left: 18px;
-
-  margin-left: -7px;
-}
-.timeline-d-content strong {
-  display: block;
-
-  margin-bottom: 6px;
-
-  font-size: 14px;
-
-  color: #0f172a;
-}
-.timeline-d-content p {
-  margin: 0 0 6px;
-
-  font-size: 14px;
-
-  color: #475569;
-}
-.timeline-d-content small {
-  color: #94a3b8;
-
+.attachment-d-card small {
+  color: #64748b;
   font-size: 12px;
 }
+
+.empty-d-text {
+  padding: 16px;
+  text-align: center;
+  border: 1px dashed #cbd5e1;
+  border-radius: 10px;
+  color: #64748b;
+  font-size: 13px;
+  background: #f8fafc;
+}
+
+.activity-d-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  position: relative;
+}
+
+.timeline-d-item {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+}
+
+.timeline-d-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #2563eb;
+  margin-top: 6px;
+  flex-shrink: 0;
+}
+
+.timeline-d-content {
+  flex: 1;
+  padding-bottom: 14px;
+  border-left: 2px solid #e2e8f0;
+  padding-left: 14px;
+  margin-left: -5px;
+}
+
+.timeline-d-content strong {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 13.5px;
+  color: #0f172a;
+}
+
+.timeline-d-content p {
+  margin: 0 0 4px;
+  font-size: 13px;
+  color: #475569;
+}
+
+.timeline-d-content small {
+  color: #94a3b8;
+  font-size: 11.5px;
+}
+
 .task-d-actions {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  margin-top: 32px;
+  gap: 10px;
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid #e2e8f0;
 }
 
-.task-d-actions .drawer-d-btn {
+.task-d-actions .drawer-d-btn,
+.task-d-actions button {
   width: 100%;
+  padding: 11px 16px;
+  border: none;
+  border-radius: 10px;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .task-info-banner {
   margin-bottom: 18px;
-  padding: 14px 16px;
-
+  padding: 12px 14px;
   border-radius: 10px;
-
   background: #eff6ff;
-
   border-left: 4px solid #2563eb;
-
   color: #1e3a8a;
 }
 
 .task-info-banner strong {
   display: block;
-  margin-bottom: 6px;
-  font-size: 15px;
+  margin-bottom: 4px;
+  font-size: 14px;
 }
 
 .task-info-banner p {
   margin: 0;
-  font-size: 14px;
+  font-size: 13px;
   line-height: 1.5;
 }
 
@@ -328,9 +319,9 @@
   background: #f8fafc;
   border: 1px solid #e2e8f0;
   border-radius: 8px;
-  padding: 8px 14px;
+  padding: 8px 12px;
   margin-bottom: 16px;
-  font-size: 13px;
+  font-size: 12.5px;
   color: #334155;
 }
 
@@ -359,4 +350,12 @@
 .phase-text-badge {
   color: #2563eb !important;
   font-weight: 600 !important;
+}
+
+@media (max-width: 480px) {
+  .task-info-d-grid {
+    grid-template-columns: 1fr;
+    gap: 14px;
+    padding: 16px;
+  }
 }

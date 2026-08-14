@@ -25,6 +25,8 @@ import Loader from "../../components/Loader/Loader";
 import RecentActivitiesCard from "../../components/RecentActivitiesCard/RecentActivitiesCard";
 import PendingReviewsCard from "../../components/PendingReviewsCard/PendingReviewsCard";
 import UpcomingDeadlinesCard from "../../components/UpcomingDeadlinesCard/UpcomingDeadlinesCard";
+import WorkloadAttentionCard from "../../components/WorkloadAttentionCard/WorkloadAttentionCard";
+import TaskStatusDistributionCard from "../../components/TaskStatusDistributionCard/TaskStatusDistributionCard";
 
 function Dashboard() {
   const [loading, setLoading] = useState(true);
@@ -587,46 +589,15 @@ function Dashboard() {
 
       {!isSingleProject ? (
         <section className="chart-section">
-          <div className="chart-card">
-            <h3>Task Status Distribution</h3>
+          <TaskStatusDistributionCard
+            role={user.role}
+            taskChartData={taskChartData}
+          />
 
-            <ResponsiveContainer width="100%" height={320}>
-              <PieChart>
-                <Pie
-                  data={taskChartData}
-                  dataKey="value"
-                  nameKey="name"
-                  outerRadius={110}
-                >
-                  {taskChartData.map((entry, index) => (
-                    <Cell key={index} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-
-                <Tooltip />
-
-                <Legend />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-
-          <div className="chart-card">
-            <h3>Task Overview</h3>
-
-            <ResponsiveContainer width="100%" height={320}>
-              <BarChart data={taskChartData}>
-                <CartesianGrid strokeDasharray="3 3" />
-
-                <XAxis dataKey="name" />
-
-                <YAxis />
-
-                <Tooltip />
-
-                <Bar dataKey="value" fill="#2563eb" radius={[8, 8, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
+          <WorkloadAttentionCard
+            role={user.role}
+            workloadAttention={statistics.workloadAttention}
+          />
         </section>
       ) : (
         <>

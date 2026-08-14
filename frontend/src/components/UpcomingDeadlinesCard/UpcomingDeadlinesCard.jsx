@@ -13,6 +13,19 @@ function UpcomingDeadlinesCard({
 }) {
   const navigate = useNavigate();
 
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
+  const taskBaseUrl = user?.role === "employee" ? "/employee/tasks" : "/tasks";
+
+  const handleRowClick = (task) => {
+    const taskId =
+      task?._id ||
+      (typeof task === "string" ? task : null);
+
+    if (taskId) {
+      navigate(`${taskBaseUrl}?task=${taskId}`);
+    }
+  };
+
   return (
     <div className="dashboard-card">
       <div className="dashboard-card-header">
@@ -35,9 +48,17 @@ function UpcomingDeadlinesCard({
         <div className="deadline-list">
           {tasks.map((task) => {
             const due = formatDueDate(task.dueDate);
+            const taskId =
+              task?._id ||
+              (typeof task === "string" ? task : null);
+            const isClickable = Boolean(taskId);
 
             return (
-              <div key={task._id} className="deadline-item">
+              <div
+                key={task._id}
+                className={`deadline-item ${isClickable ? "clickable" : ""}`}
+                onClick={() => isClickable && handleRowClick(task)}
+              >
                 <div className="deadline-content">
                   <h4>{task.title}</h4>
 

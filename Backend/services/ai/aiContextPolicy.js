@@ -9,8 +9,10 @@ const CustomError = require("../../errors/CustomError");
 const CONTEXT_TYPES = {
   EMPLOYEE_REPORT: "EMPLOYEE_REPORT",
   MANAGER_REPORT: "MANAGER_REPORT",
+  MANAGER_PERFORMANCE_REPORT: "MANAGER_PERFORMANCE_REPORT",
   ADMIN_REPORT: "ADMIN_REPORT",
   PROJECT_REPORT: "PROJECT_REPORT",
+  DEPARTMENT_REPORT: "DEPARTMENT_REPORT",
 };
 
 /**
@@ -68,6 +70,15 @@ const ALLOWED_FIELDS = {
     "myInsights",
     "mySummary",
     "employeeDetails",
+    "totalEmployees",
+    "summary",
+    "performanceDistribution",
+    "topPerformers",
+    "attentionCandidates",
+    "departmentBreakdown",
+    "employeePerformanceList",
+    "pagination",
+    "historicalTrend",
   ],
   MANAGER_REPORT: [
     "summary",
@@ -116,6 +127,27 @@ const ALLOWED_FIELDS = {
     "bottlenecks",
     "riskAssessment",
   ],
+  DEPARTMENT_REPORT: [
+    "scopeMode",
+    "department",
+    "departmentHealth",
+    "workforce",
+    "taskMetrics",
+    "submissionMetrics",
+    "managerOverview",
+    "employeePerformanceSummary",
+    "projectOverview",
+    "whatsGoingWell",
+    "attentionAreas",
+    "bottlenecks",
+    "trends",
+    "historicalTrendsSupported",
+    "limitations",
+    "summary",
+    "departmentComparison",
+    "bestPerformingDepartments",
+    "departmentsRequiringAttention",
+  ],
 };
 
 /**
@@ -156,11 +188,24 @@ const validateContextAccess = (viewer, contextType, targetSubjectId = null) => {
     const allowedTypes = [
       CONTEXT_TYPES.EMPLOYEE_REPORT,
       CONTEXT_TYPES.MANAGER_REPORT,
+      CONTEXT_TYPES.MANAGER_PERFORMANCE_REPORT,
       CONTEXT_TYPES.PROJECT_REPORT,
     ];
     if (!allowedTypes.includes(contextType)) {
       throw new CustomError(
         `Forbidden: Managers are not authorized for context type "${contextType}".`,
+        403,
+      );
+    }
+
+    // Manager CANNOT request another manager's context
+    if (
+      (contextType === CONTEXT_TYPES.MANAGER_REPORT || contextType === CONTEXT_TYPES.MANAGER_PERFORMANCE_REPORT) &&
+      targetSubjectId &&
+      targetSubjectId.toString() !== viewer.userId.toString()
+    ) {
+      throw new CustomError(
+        "Forbidden: Managers are only authorized to access their own manager performance report.",
         403,
       );
     }

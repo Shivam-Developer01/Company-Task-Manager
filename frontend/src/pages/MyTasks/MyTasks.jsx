@@ -34,7 +34,14 @@ function MyTasks() {
 
   const debouncedSearch = useDebounce(search);
 
-  const [status, setStatus] = useState("");
+  const [status, setStatus] = useState(() => searchParams.get("status") || "");
+
+  useEffect(() => {
+    const statusParam = searchParams.get("status");
+    if (statusParam !== null) {
+      setStatus(statusParam);
+    }
+  }, [searchParams]);
 
   const [priority, setPriority] = useState("");
 
@@ -75,6 +82,9 @@ function MyTasks() {
     try {
       setLoading(true);
 
+      const filterParam = searchParams.get("filter");
+      const statusParam = searchParams.get("status");
+
       const params = {
         page,
         search: debouncedSearch,
@@ -83,6 +93,13 @@ function MyTasks() {
 
       if (status !== "") {
         params.status = status;
+      } else if (statusParam) {
+        params.status = statusParam;
+      }
+
+      if (filterParam) {
+        params.filter = filterParam;
+        params[filterParam] = "true";
       }
 
       if (priority) {
@@ -105,19 +122,47 @@ function MyTasks() {
   };
 
   useEffect(() => {
-    const taskId = searchParams.get("task");
+    const taskId = searchParams.get("task") || searchParams.get("taskId");
 
-    if (!taskId || tasks.length === 0) return;
+    if (!taskId) return;
 
-    const task = tasks.find((t) => t._id === taskId);
+    let isSubscribed = true;
 
-    if (task) {
-      handleView(task);
+    const openTaskFromParam = async () => {
+      let task = tasks.find((t) => t._id === taskId);
+      if (!task) {
+        try {
+          const response = await taskService.getTask(taskId);
+          task = response.data;
+        } catch (error) {
+          if (isSubscribed) {
+            toast.error(error.response?.data?.message || "Task not found or access denied.");
+            const params = new URLSearchParams(searchParams);
+            params.delete("task");
+            params.delete("taskId");
+            setSearchParams(params, { replace: true });
+          }
+          return;
+        }
+      }
 
-      searchParams.delete("task");
-      setSearchParams(searchParams, { replace: true });
+      if (task && isSubscribed) {
+        handleView(task);
+        const params = new URLSearchParams(searchParams);
+        params.delete("task");
+        params.delete("taskId");
+        setSearchParams(params, { replace: true });
+      }
+    };
+
+    if (!loading) {
+      openTaskFromParam();
     }
-  }, [tasks]);
+
+    return () => {
+      isSubscribed = false;
+    };
+  }, [tasks, loading, searchParams, handleView]);
 
   useEffect(() => {
     fetchTasks();
@@ -397,6 +442,7 @@ function MyTasks() {
       </div>
 
       <DataTable
+        headerColor="#2563eb"
         columns={columns}
         data={tasks}
         loading={loading}

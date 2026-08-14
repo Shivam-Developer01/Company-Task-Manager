@@ -276,6 +276,7 @@ function Departments() {
       </div>
 
       <DataTable
+        headerColor="#8b5cf6"
         columns={columns}
         data={departments}
         loading={loading}

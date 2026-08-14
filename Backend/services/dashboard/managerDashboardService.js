@@ -138,6 +138,7 @@ const getManagerDashboard = async (req, res) => {
     assignmentRejected,
 
     overdueTasks,
+    dueSoonTasks,
 
     recentTasks,
     upcomingDeadlines,
@@ -210,6 +211,25 @@ const getManagerDashboard = async (req, res) => {
       isArchived: false,
       ...projectFilter,
       dueDate: { $lt: today },
+      status: {
+        $in: [
+          TASK_STATUS.ASSIGNED,
+          TASK_STATUS.ACCEPTED,
+          TASK_STATUS.IN_PROGRESS,
+        ],
+      },
+    }),
+
+    // ===========================================================
+    // Due Soon Tasks (Within next 3 days)
+    // ===========================================================
+    Task.countDocuments({
+      isArchived: false,
+      ...projectFilter,
+      dueDate: {
+        $gte: today,
+        $lte: new Date(today.getTime() + 3 * 24 * 60 * 60 * 1000),
+      },
       status: {
         $in: [
           TASK_STATUS.ASSIGNED,
@@ -449,7 +469,14 @@ const getManagerDashboard = async (req, res) => {
       },
 
       overdueTasks,
+      dueSoonTasks,
       pendingReviews: pendingReviewCount,
+      workloadAttention: {
+        overdue: overdueTasks,
+        dueSoon: dueSoonTasks,
+        pendingReview: pendingReviewCount,
+        awaitingAcceptance: assigned,
+      },
     },
 
     recentTasks,

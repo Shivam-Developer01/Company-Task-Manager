@@ -16,6 +16,7 @@ const getAllTasks = async (req, res) => {
     project,
     phase,
     overdue,
+    dueSoon,
     isArchived,
     page = 1,
     limit = 10,
@@ -75,6 +76,16 @@ const getAllTasks = async (req, res) => {
   if (overdue === "true") {
     query.dueDate = {
       $lt: new Date(),
+    };
+
+    query.status = {
+      $in: ["Assigned", "Accepted", "In Progress"],
+    };
+  } else if (dueSoon === "true") {
+    const today = new Date();
+    query.dueDate = {
+      $gte: today,
+      $lte: new Date(today.getTime() + 3 * 24 * 60 * 60 * 1000),
     };
 
     query.status = {

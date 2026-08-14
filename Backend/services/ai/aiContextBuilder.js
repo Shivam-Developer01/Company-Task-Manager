@@ -1,13 +1,19 @@
+const mongoose = require("mongoose");
+const User = require("../../models/User");
+const { ROLES } = require("../../constants/constants");
+
 const {
   CONTEXT_TYPES,
   validateContextAccess,
   sanitizePayload,
 } = require("./aiContextPolicy");
 
-const { getEmployeeMetrics } = require("../analytics/employeeAnalytics");
+const { getEmployeeMetrics, getAllEmployeesPerformanceMetrics } = require("../analytics/employeeAnalytics");
 const { getManagerTeamMetrics } = require("../analytics/managerAnalytics");
+const { getManagerPerformanceAnalytics } = require("../analytics/managerPerformanceAnalytics");
 const { getCompanyMetrics } = require("../analytics/companyAnalytics");
 const { getProjectMetrics } = require("../analytics/projectAnalytics");
+const { getDepartmentPerformanceAnalytics } = require("../analytics/departmentAnalytics");
 
 const CustomError = require("../../errors/CustomError");
 
@@ -22,7 +28,7 @@ const CustomError = require("../../errors/CustomError");
  * @param {Object} params
  * @param {Object} params.viewer Authenticated user object from req.user
  * @param {string} params.contextType One of CONTEXT_TYPES (EMPLOYEE_REPORT, MANAGER_REPORT, ADMIN_REPORT, PROJECT_REPORT)
- * @param {string} [params.targetSubjectId] Optional target employee ID (for Employee Perspective)
+ * @param {string} [params.targetSubjectId] Optional target employee/manager ID
  * @param {string} [params.projectId] Optional target project ID (for Project Report)
  * @returns {Promise<Object>} Sanitized AIContextDTO
  */
@@ -40,21 +46,102 @@ const buildAiContext = async ({
 
   // 2. Retrieve Authorized Analytics from Existing Services (0 duplicate DB queries)
   if (contextType === CONTEXT_TYPES.EMPLOYEE_REPORT) {
-    // Subject is either specified employee (for Admin/Manager) or self (for Employee)
-    const effectiveSubjectId = targetSubjectId || viewer.userId;
-    rawAnalytics = await getEmployeeMetrics(effectiveSubjectId);
+    const viewerRoleLower = (viewer.role || "").toLowerCase();
+    const isAllEmployees =
+      !targetSubjectId ||
+      targetSubjectId === "all_employees" ||
+      targetSubjectId === "null" ||
+      targetSubjectId === "undefined";
 
-    subjectInfo = {
-      type: "employee",
-      targetId: effectiveSubjectId,
-      employeeDetails: rawAnalytics?.employeeDetails || null,
-    };
+    if (isAllEmployees) {
+      if (viewerRoleLower === ROLES.EMPLOYEE) {
+        throw new CustomError(
+          "Forbidden: Employees are restricted to viewing their own performance report.",
+          403
+        );
+      }
+      rawAnalytics = await getAllEmployeesPerformanceMetrics({ viewer });
+      subjectInfo = {
+        type: "all_employees",
+        targetId: "all_employees",
+        name: viewerRoleLower === ROLES.ADMIN ? "All Employees (Company-wide)" : "All Accessible Team Employees",
+      };
+    } else {
+      const effectiveSubjectId = targetSubjectId || viewer.userId;
+      rawAnalytics = await getEmployeeMetrics(effectiveSubjectId);
+      subjectInfo = {
+        type: "employee",
+        targetId: effectiveSubjectId,
+        employeeDetails: rawAnalytics?.employeeDetails || null,
+        name: rawAnalytics?.employeeDetails?.name || "Employee",
+      };
+    }
   } else if (contextType === CONTEXT_TYPES.MANAGER_REPORT) {
-    rawAnalytics = await getManagerTeamMetrics(viewer);
+    const viewerRoleLower = (viewer.role || "").toLowerCase();
+    let effectiveUser = viewer;
+    let targetManager = null;
+
+    if (viewerRoleLower === ROLES.ADMIN && targetSubjectId) {
+      if (!mongoose.Types.ObjectId.isValid(targetSubjectId)) {
+        throw new CustomError("Invalid target manager ID format.", 400);
+      }
+      targetManager = await User.findById(targetSubjectId).select("_id name employeeId role isActive").lean();
+      if (!targetManager || (targetManager.role || "").toLowerCase() !== ROLES.MANAGER) {
+        throw new CustomError("Specified target user does not exist or is not a Manager.", 400);
+      }
+      effectiveUser = {
+        userId: targetManager._id.toString(),
+        role: ROLES.MANAGER,
+        name: targetManager.name,
+      };
+    }
+
+    rawAnalytics = await getManagerTeamMetrics(effectiveUser);
 
     subjectInfo = {
       type: "manager_team",
-      targetId: viewer.userId,
+      targetId: targetManager
+        ? targetManager._id.toString()
+        : viewerRoleLower === ROLES.ADMIN
+        ? "all_managers"
+        : viewer.userId,
+      name: targetManager
+        ? targetManager.name
+        : viewerRoleLower === ROLES.ADMIN
+        ? "All Managers"
+        : viewer.name || "Manager Team",
+    };
+  } else if (contextType === CONTEXT_TYPES.MANAGER_PERFORMANCE_REPORT) {
+    const viewerRoleLower = (viewer.role || "").toLowerCase();
+    let targetManager = null;
+
+    if (viewerRoleLower === ROLES.ADMIN && targetSubjectId && targetSubjectId !== "all_managers") {
+      if (!mongoose.Types.ObjectId.isValid(targetSubjectId)) {
+        throw new CustomError("Invalid target manager ID format.", 400);
+      }
+      targetManager = await User.findById(targetSubjectId).select("_id name employeeId role isActive").lean();
+      if (!targetManager || (targetManager.role || "").toLowerCase() !== ROLES.MANAGER) {
+        throw new CustomError("Specified target user does not exist or is not a Manager.", 400);
+      }
+    }
+
+    rawAnalytics = await getManagerPerformanceAnalytics({
+      viewer,
+      targetManagerId: targetManager ? targetManager._id.toString() : targetSubjectId,
+    });
+
+    subjectInfo = {
+      type: "manager_performance",
+      targetId: targetManager
+        ? targetManager._id.toString()
+        : viewerRoleLower === ROLES.ADMIN && (!targetSubjectId || targetSubjectId === "all_managers")
+        ? "all_managers"
+        : viewer.userId,
+      name: targetManager
+        ? targetManager.name
+        : viewerRoleLower === ROLES.ADMIN && (!targetSubjectId || targetSubjectId === "all_managers")
+        ? "All Managers"
+        : viewer.name || "Manager Performance",
     };
   } else if (contextType === CONTEXT_TYPES.ADMIN_REPORT) {
     rawAnalytics = await getCompanyMetrics();
@@ -72,6 +159,17 @@ const buildAiContext = async ({
     subjectInfo = {
       type: "project",
       targetId: projectId,
+    };
+  } else if (contextType === CONTEXT_TYPES.DEPARTMENT_REPORT) {
+    rawAnalytics = await getDepartmentPerformanceAnalytics({
+      viewer,
+      targetDepartmentId: targetSubjectId,
+    });
+
+    subjectInfo = {
+      type: "department",
+      targetId: rawAnalytics?.department?.id || targetSubjectId || "all_departments",
+      name: rawAnalytics?.department?.name || (rawAnalytics?.scopeMode === "ALL_DEPARTMENTS" ? "All Departments" : "Department"),
     };
   } else {
     throw new CustomError(`Unsupported context type "${contextType}".`, 400);

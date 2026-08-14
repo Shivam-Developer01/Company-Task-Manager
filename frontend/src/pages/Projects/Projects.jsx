@@ -145,6 +145,13 @@ function Projects() {
     );
   };
 
+  const handleMemberClick = (member) => {
+    const memberId = member._id || member.id;
+    if (memberId) {
+      navigate(`/employees?user=${memberId}&source=project`);
+    }
+  };
+
   const handleManageMembers = () => {
     setProjectModalMode("members");
     setEditingProject(selectedProject);
@@ -406,6 +413,7 @@ function Projects() {
       </div>
 
       <DataTable
+        headerColor="#10b981"
         columns={columns}
         data={projects}
         loading={loading}
@@ -493,7 +501,11 @@ function Projects() {
               {selectedProject.members?.length ? (
                 <div className="project-members">
                   {selectedProject.members.map((member) => (
-                    <div className="project-member-card" key={member._id}>
+                    <div
+                      className="project-member-card clickable"
+                      key={member._id}
+                      onClick={() => handleMemberClick(member)}
+                    >
                       <div className="project-member-info">
                         <h4>{member.name}</h4>
 

@@ -322,6 +322,7 @@ function Designations() {
       </AdvancedSearchBar>
 
       <DataTable
+        headerColor="#f59e0b"
         columns={columns}
         data={designations}
         loading={loading}

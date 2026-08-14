@@ -3,6 +3,8 @@ const mongoose = require("mongoose");
 const Task = require("../../models/Task");
 const Submission = require("../../models/Submission");
 const Activity = require("../../models/Activity");
+const Department = require("../../models/Department");
+const Designation = require("../../models/Designation");
 
 const {
   TASK_STATUS,
@@ -1309,11 +1311,508 @@ const getEmployeeActionCenter = async (employeeId, projectScope = null) => {
   };
 };
 
+/**
+ * Aggregate performance metrics across ALL accessible employees (Phase 16 / V4 Specification).
+ * Optimized for large-scale operations (2,000+ employees) using server-side batch aggregations.
+ *
+ * @param {Object} params
+ * @param {Object} params.viewer User object { userId, role }
+ * @param {number} [params.page=1] Page index (1-based)
+ * @param {number} [params.limit=50] Page size
+ * @param {string} [params.search=""] Search term for employee name or department
+ * @param {string} [params.departmentId=null] Department filter ID
+ * @param {string} [params.sortBy="completionRate"] Sort field
+ * @param {string} [params.sortOrder="desc"] Sort direction
+ * @returns {Promise<Object>} Aggregated All Employees metrics DTO
+ */
+const getAllEmployeesPerformanceMetrics = async ({
+  viewer,
+  page = 1,
+  limit = 50,
+  search = "",
+  departmentId = null,
+  sortBy = "completionRate",
+  sortOrder = "desc",
+}) => {
+  const today = new Date();
+  const User = require("../../models/User");
+  const { getAccessibleProjectIds } = require("../access/projectAccess");
+  const CustomError = require("../../errors/CustomError");
+  const { ROLES } = require("../../constants/constants");
+
+  const viewerRoleLower = (viewer.role || "").toLowerCase();
+
+  // 1. Determine accessible employee IDs
+  let employeeDocs = [];
+
+  if (viewerRoleLower === ROLES.ADMIN) {
+    const userQuery = { role: ROLES.EMPLOYEE, isActive: true };
+    if (departmentId && mongoose.Types.ObjectId.isValid(departmentId)) {
+      userQuery.department = new mongoose.Types.ObjectId(departmentId);
+    }
+    employeeDocs = await User.find(userQuery)
+      .select("_id name email employeeId department designation")
+      .populate("department", "name code")
+      .populate("designation", "title")
+      .lean();
+  } else if (viewerRoleLower === ROLES.MANAGER) {
+    const projectIds = await getAccessibleProjectIds(viewer);
+    const assignedEmployeeIds = await Task.distinct("assignedTo", {
+      isArchived: { $ne: true },
+      $or: [
+        { project: { $in: projectIds } },
+        { assignedBy: new mongoose.Types.ObjectId(viewer.userId) },
+      ],
+    });
+
+    const userQuery = {
+      _id: { $in: assignedEmployeeIds },
+      role: ROLES.EMPLOYEE,
+      isActive: true,
+    };
+    if (departmentId && mongoose.Types.ObjectId.isValid(departmentId)) {
+      userQuery.department = new mongoose.Types.ObjectId(departmentId);
+    }
+
+    employeeDocs = await User.find(userQuery)
+      .select("_id name email employeeId department designation")
+      .populate("department", "name code")
+      .populate("designation", "title")
+      .lean();
+  } else {
+    throw new CustomError(
+      "Forbidden: Employees are restricted to viewing their own performance report.",
+      403,
+    );
+  }
+
+  if (!employeeDocs || employeeDocs.length === 0) {
+    return {
+      totalEmployees: 0,
+      summary: {
+        totalEmployees: 0,
+        totalActiveTasks: 0,
+        totalCompletedTasks: 0,
+        totalOverdueTasks: 0,
+        totalPendingTasks: 0,
+        totalAssignedCount: 0,
+        avgCompletionRate: 0,
+        avgOnTimeCompletionRate: 0,
+        avgCompletionTime: null,
+        avgRejectionRate: 0,
+      },
+      performanceDistribution: {
+        highPerforming: 0,
+        strong: 0,
+        stable: 0,
+        needsAttention: 0,
+      },
+      topPerformers: [],
+      attentionCandidates: [],
+      departmentBreakdown: [],
+      employeePerformanceList: [],
+      pagination: { page: 1, limit, totalItems: 0, totalPages: 0 },
+      historicalTrend:
+        "Historical employee performance comparison is not currently available.",
+    };
+  }
+
+  const employeeObjectIds = employeeDocs.map((e) => e._id);
+
+  // 2. Batch Task Metrics Aggregation (1 query for all employees)
+  const taskAggRes = await Task.aggregate([
+    {
+      $match: {
+        assignedTo: { $in: employeeObjectIds },
+        isArchived: { $ne: true },
+      },
+    },
+    {
+      $group: {
+        _id: "$assignedTo",
+        totalAssignedCount: { $sum: 1 },
+        activeTaskCount: {
+          $sum: {
+            $cond: [
+              {
+                $in: [
+                  "$status",
+                  [
+                    TASK_STATUS.ASSIGNED,
+                    TASK_STATUS.ACCEPTED,
+                    TASK_STATUS.IN_PROGRESS,
+                  ],
+                ],
+              },
+              1,
+              0,
+            ],
+          },
+        },
+        completedTaskCount: {
+          $sum: {
+            $cond: [{ $eq: ["$status", TASK_STATUS.CLOSED] }, 1, 0],
+          },
+        },
+        pendingTaskCount: {
+          $sum: {
+            $cond: [{ $eq: ["$status", TASK_STATUS.SUBMITTED] }, 1, 0],
+          },
+        },
+        overdueTaskCount: {
+          $sum: {
+            $cond: [
+              {
+                $and: [
+                  { $lt: ["$dueDate", today] },
+                  {
+                    $in: [
+                      "$status",
+                      [
+                        TASK_STATUS.ASSIGNED,
+                        TASK_STATUS.ACCEPTED,
+                        TASK_STATUS.IN_PROGRESS,
+                      ],
+                    ],
+                  },
+                ],
+              },
+              1,
+              0,
+            ],
+          },
+        },
+        withdrawnCount: {
+          $sum: {
+            $cond: [{ $eq: ["$status", TASK_STATUS.WITHDRAWN] }, 1, 0],
+          },
+        },
+        completionTimeSum: {
+          $sum: {
+            $cond: [
+              {
+                $and: [
+                  { $eq: ["$status", TASK_STATUS.CLOSED] },
+                  { $ne: ["$completedAt", null] },
+                ],
+              },
+              {
+                $divide: [
+                  { $subtract: ["$completedAt", "$createdAt"] },
+                  86400000,
+                ],
+              },
+              0,
+            ],
+          },
+        },
+        completionTimeCount: {
+          $sum: {
+            $cond: [
+              {
+                $and: [
+                  { $eq: ["$status", TASK_STATUS.CLOSED] },
+                  { $ne: ["$completedAt", null] },
+                ],
+              },
+              1,
+              0,
+            ],
+          },
+        },
+      },
+    },
+  ]);
+
+  const taskStatsMap = {};
+  taskAggRes.forEach((t) => {
+    taskStatsMap[t._id.toString()] = t;
+  });
+
+  // 3. Batch Submission Metrics Aggregation (1 query for all employees)
+  const submissionAggRes = await Submission.aggregate([
+    {
+      $lookup: {
+        from: "tasks",
+        localField: "task",
+        foreignField: "_id",
+        as: "taskDoc",
+      },
+    },
+    { $unwind: "$taskDoc" },
+    { $match: { "taskDoc.assignedTo": { $in: employeeObjectIds } } },
+    {
+      $group: {
+        _id: "$taskDoc.assignedTo",
+        totalSubmissions: { $sum: 1 },
+        rejectedSubmissions: {
+          $sum: {
+            $cond: [{ $eq: ["$status", SUBMISSION_STATUS.REJECTED] }, 1, 0],
+          },
+        },
+      },
+    },
+  ]);
+
+  const subStatsMap = {};
+  submissionAggRes.forEach((s) => {
+    subStatsMap[s._id.toString()] = s;
+  });
+
+  // 4. Assemble Individual Employee Metric DTOs
+  let allEmployeeMetrics = employeeDocs.map((emp) => {
+    const idStr = emp._id.toString();
+    const tStats = taskStatsMap[idStr] || {
+      totalAssignedCount: 0,
+      activeTaskCount: 0,
+      completedTaskCount: 0,
+      pendingTaskCount: 0,
+      overdueTaskCount: 0,
+      withdrawnCount: 0,
+      completionTimeSum: 0,
+      completionTimeCount: 0,
+    };
+    const sStats = subStatsMap[idStr] || {
+      totalSubmissions: 0,
+      rejectedSubmissions: 0,
+    };
+
+    const completionDenominator =
+      tStats.totalAssignedCount - tStats.withdrawnCount;
+    const completionRate =
+      completionDenominator > 0
+        ? Number(
+            (
+              (tStats.completedTaskCount / completionDenominator) *
+              100
+            ).toFixed(2),
+          )
+        : 0;
+
+    const averageCompletionTime =
+      tStats.completionTimeCount > 0
+        ? Number(
+            (tStats.completionTimeSum / tStats.completionTimeCount).toFixed(2),
+          )
+        : null;
+
+    const rejectionRate =
+      sStats.totalSubmissions > 0
+        ? Number(
+            (
+              (sStats.rejectedSubmissions / sStats.totalSubmissions) *
+              100
+            ).toFixed(2),
+          )
+        : 0;
+
+    let performanceCategory = "Stable";
+    if (completionRate >= 85 && tStats.overdueTaskCount === 0) {
+      performanceCategory = "High Performing";
+    } else if (completionRate >= 70) {
+      performanceCategory = "Strong";
+    } else if (
+      completionRate < 50 ||
+      tStats.overdueTaskCount > 3 ||
+      rejectionRate > 25
+    ) {
+      performanceCategory = "Needs Attention";
+    }
+
+    return {
+      id: emp._id.toString(),
+      name: emp.name,
+      email: emp.email,
+      employeeId: emp.employeeId || "N/A",
+      department: emp.department ? emp.department.name : "Unassigned",
+      designation: emp.designation ? emp.designation.title : "Employee",
+      totalTasks: tStats.totalAssignedCount,
+      activeTasks: tStats.activeTaskCount,
+      completedTasks: tStats.completedTaskCount,
+      pendingTasks: tStats.pendingTaskCount,
+      overdueTasks: tStats.overdueTaskCount,
+      completionRate,
+      averageCompletionTime,
+      rejectionRate,
+      performanceCategory,
+    };
+  });
+
+  // Apply search filter if present
+  if (search && search.trim()) {
+    const term = search.trim().toLowerCase();
+    allEmployeeMetrics = allEmployeeMetrics.filter(
+      (m) =>
+        m.name.toLowerCase().includes(term) ||
+        m.department.toLowerCase().includes(term) ||
+        m.employeeId.toLowerCase().includes(term),
+    );
+  }
+
+  // 5. Calculate Organization-Wide Summaries
+  let totalActiveTasks = 0;
+  let totalCompletedTasks = 0;
+  let totalOverdueTasks = 0;
+  let totalPendingTasks = 0;
+  let totalAssignedCount = 0;
+  let compRateSum = 0;
+  let compTimeSum = 0;
+  let compTimeCount = 0;
+  let rejRateSum = 0;
+
+  const distribution = {
+    highPerforming: 0,
+    strong: 0,
+    stable: 0,
+    needsAttention: 0,
+  };
+
+  allEmployeeMetrics.forEach((m) => {
+    totalActiveTasks += m.activeTasks;
+    totalCompletedTasks += m.completedTasks;
+    totalOverdueTasks += m.overdueTasks;
+    totalPendingTasks += m.pendingTasks;
+    totalAssignedCount += m.totalTasks;
+    compRateSum += m.completionRate;
+    rejRateSum += m.rejectionRate;
+    if (m.averageCompletionTime !== null) {
+      compTimeSum += m.averageCompletionTime;
+      compTimeCount++;
+    }
+
+    if (m.performanceCategory === "High Performing")
+      distribution.highPerforming++;
+    else if (m.performanceCategory === "Strong") distribution.strong++;
+    else if (m.performanceCategory === "Needs Attention")
+      distribution.needsAttention++;
+    else distribution.stable++;
+  });
+
+  const totalEmpCount = allEmployeeMetrics.length;
+  const avgCompletionRate =
+    totalEmpCount > 0 ? Number((compRateSum / totalEmpCount).toFixed(2)) : 0;
+  const avgRejectionRate =
+    totalEmpCount > 0 ? Number((rejRateSum / totalEmpCount).toFixed(2)) : 0;
+  const avgCompletionTime =
+    compTimeCount > 0
+      ? Number((compTimeSum / compTimeCount).toFixed(2))
+      : null;
+
+  // 6. Top Performers & Attention Candidates (Capped at 5 each for LLM Context)
+  const sortedByComp = [...allEmployeeMetrics].sort(
+    (a, b) => b.completionRate - a.completionRate,
+  );
+  const sortedByOverdue = [...allEmployeeMetrics].sort(
+    (a, b) => b.overdueTasks - a.overdueTasks,
+  );
+
+  const topPerformers = sortedByComp.slice(0, 5).map((e) => ({
+    name: e.name,
+    department: e.department,
+    completionRate: `${e.completionRate}%`,
+    completedTasks: e.completedTasks,
+  }));
+
+  const attentionCandidates = sortedByOverdue
+    .filter(
+      (e) => e.overdueTasks > 0 || e.performanceCategory === "Needs Attention",
+    )
+    .slice(0, 5)
+    .map((e) => ({
+      name: e.name,
+      department: e.department,
+      evidence: `${e.overdueTasks} overdue tasks, ${e.rejectionRate}% rejection rate, ${e.completionRate}% completion rate.`,
+    }));
+
+  // 7. Department Breakdown
+  const deptMap = {};
+  allEmployeeMetrics.forEach((m) => {
+    const dName = m.department;
+    if (!deptMap[dName]) {
+      deptMap[dName] = {
+        department: dName,
+        employeeCount: 0,
+        totalActiveTasks: 0,
+        totalCompletedTasks: 0,
+        totalOverdueTasks: 0,
+        compRateSum: 0,
+      };
+    }
+    deptMap[dName].employeeCount++;
+    deptMap[dName].totalActiveTasks += m.activeTasks;
+    deptMap[dName].totalCompletedTasks += m.completedTasks;
+    deptMap[dName].totalOverdueTasks += m.overdueTasks;
+    deptMap[dName].compRateSum += m.completionRate;
+  });
+
+  const departmentBreakdown = Object.values(deptMap).map((d) => ({
+    department: d.department,
+    employeeCount: d.employeeCount,
+    totalActiveTasks: d.totalActiveTasks,
+    avgCompletionRate: Number((d.compRateSum / d.employeeCount).toFixed(2)),
+  }));
+
+  // 8. Server-Side Sorting & Pagination
+  const sortMult = sortOrder === "asc" ? 1 : -1;
+  allEmployeeMetrics.sort((a, b) => {
+    const valA = a[sortBy] ?? 0;
+    const valB = b[sortBy] ?? 0;
+    if (typeof valA === "string") return valA.localeCompare(valB) * sortMult;
+    return (valA - valB) * sortMult;
+  });
+
+  const pageNum = Math.max(1, parseInt(page, 10) || 1);
+  const pageSize = Math.max(1, parseInt(limit, 10) || 50);
+  const totalItems = allEmployeeMetrics.length;
+  const totalPages = Math.ceil(totalItems / pageSize);
+  const pagedItems = allEmployeeMetrics.slice(
+    (pageNum - 1) * pageSize,
+    pageNum * pageSize,
+  );
+
+  return {
+    totalEmployees: totalEmpCount,
+    totalAssignedCount: totalAssignedCount,
+    activeTaskCount: totalActiveTasks,
+    completedTaskCount: totalCompletedTasks,
+    pendingTaskCount: totalPendingTasks,
+    overdueTaskCount: totalOverdueTasks,
+    completionRate: avgCompletionRate,
+    averageCompletionTime: avgCompletionTime,
+    rejectionRate: avgRejectionRate,
+    summary: {
+      totalEmployees: totalEmpCount,
+      totalActiveTasks,
+      totalCompletedTasks,
+      totalOverdueTasks,
+      totalPendingTasks,
+      totalAssignedCount,
+      avgCompletionRate,
+      avgCompletionTime,
+      avgRejectionRate,
+    },
+    performanceDistribution: distribution,
+    topPerformers,
+    attentionCandidates,
+    departmentBreakdown,
+    employeePerformanceList: pagedItems,
+    pagination: {
+      page: pageNum,
+      limit: pageSize,
+      totalItems,
+      totalPages,
+    },
+    historicalTrend:
+      "Historical employee performance comparison is not currently available.",
+  };
+};
+
 module.exports = {
   getEmployeeMetrics,
   getEmployeeActionCenter,
   getEmployeeProjectsAndPhases,
   getEmployeeInsights,
   getEmployeeSummary,
+  getAllEmployeesPerformanceMetrics,
 };
 

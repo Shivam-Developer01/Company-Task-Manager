@@ -107,7 +107,7 @@ const generateReportPdfBuffer = (reportPayload) => {
       ensureSpace(doc, 85);
       renderSectionHeader(doc, "1. Authoritative Source Metrics (Source of Truth)", colors, startX);
 
-      const metricPairs = extractMetricPairs(sourceMetrics);
+      const metricPairs = extractMetricPairs(sourceMetrics, reportData.reportType);
       if (metricPairs.length > 0) {
         renderMetricsCards(doc, metricPairs, startX, pageWidth, colors);
       } else {
@@ -128,14 +128,13 @@ const generateReportPdfBuffer = (reportPayload) => {
         renderSubHeading(doc, "Executive Summary", colors.primary);
         const summaryY = doc.y;
         const cleanSummary = sanitizeAiString(summaryText);
-        const textHeight = doc.heightOfString(cleanSummary, { width: pageWidth - 28, fontSize: 8.5, lineGap: 2.5 });
+        doc.fontSize(8.5).font("Helvetica");
+        const textHeight = doc.heightOfString(cleanSummary, { width: pageWidth - 28, lineGap: 2.5 });
         const boxHeight = textHeight + 16;
 
         doc.roundedRect(startX, summaryY, pageWidth, boxHeight, 5).fillAndStroke(colors.indigoLight, colors.border);
         doc.rect(startX, summaryY, 4, boxHeight).fill(colors.indigo);
         doc
-          .fontSize(8.5)
-          .font("Helvetica")
           .fillColor(colors.primary)
           .text(cleanSummary, startX + 14, summaryY + 8, { width: pageWidth - 28, align: "left", lineGap: 2.5 });
         doc.y = summaryY + boxHeight + 14;
@@ -363,20 +362,21 @@ const renderStyledListBox = (doc, items, bgColor, bulletColor, textColor, startX
     const cleanText = sanitizeAiString(String(item || ""));
     if (!cleanText) return;
 
-    ensureSpace(doc, 24);
+    doc.fontSize(8.5).font("Helvetica");
+    const textWidth = pageWidth - 30;
+    const textHeight = doc.heightOfString(cleanText, { width: textWidth, lineGap: 2 });
+    const boxHeight = textHeight + 10;
+
+    ensureSpace(doc, boxHeight + 4);
     const itemY = doc.y;
-    const textHeight = doc.heightOfString(cleanText, { width: pageWidth - 34, fontSize: 8.5, lineGap: 2.5 });
-    const boxHeight = textHeight + 12;
 
     doc.roundedRect(startX, itemY, pageWidth, boxHeight, 4).fillAndStroke(bgColor, "#E2E8F0");
     doc.circle(startX + 12, itemY + boxHeight / 2, 2.5).fill(bulletColor);
     doc
-      .fontSize(8.5)
-      .font("Helvetica")
       .fillColor(textColor)
-      .text(cleanText, startX + 22, itemY + 6, { width: pageWidth - 34, lineGap: 2.5 });
+      .text(cleanText, startX + 22, itemY + 5, { width: textWidth, lineGap: 2 });
 
-    doc.y = itemY + boxHeight + 5;
+    doc.y = itemY + boxHeight + 4;
   });
 };
 

@@ -109,6 +109,7 @@ const getEmployeeDashboard = async (req, res) => {
     submitted,
     closed,
     overdue,
+    dueSoon,
 
     myUpcomingTasks,
     myRecentActivities,
@@ -152,6 +153,22 @@ const getEmployeeDashboard = async (req, res) => {
       assignedTo: req.user.userId,
       ...taskProjectFilter,
       dueDate: { $lt: today },
+      status: {
+        $in: [
+          TASK_STATUS.ASSIGNED,
+          TASK_STATUS.ACCEPTED,
+          TASK_STATUS.IN_PROGRESS,
+        ],
+      },
+    }),
+
+    Task.countDocuments({
+      assignedTo: req.user.userId,
+      ...taskProjectFilter,
+      dueDate: {
+        $gte: today,
+        $lte: new Date(today.getTime() + 3 * 24 * 60 * 60 * 1000),
+      },
       status: {
         $in: [
           TASK_STATUS.ASSIGNED,
@@ -253,7 +270,14 @@ const getEmployeeDashboard = async (req, res) => {
       submitted,
       closed,
       overdue,
+      dueSoon,
       pendingReview,
+      workloadAttention: {
+        overdue,
+        dueSoon,
+        pendingReview,
+        awaitingAcceptance: assigned,
+      },
     },
 
     performanceMetrics,

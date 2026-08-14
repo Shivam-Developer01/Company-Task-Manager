@@ -74,7 +74,7 @@ function EmployeeTaskDrawer({
 
             <h2>{task.title}</h2>
 
-            <div style={{ display: "flex", gap: "8px", marginTop: "8px", alignItems: "center" }}>
+            <div className="task-d-badges">
               <StatusBadge status={task.status} />
               <span className={`priority-d-chip ${task.priority.toLowerCase()}`}>
                 {task.priority}

@@ -32,7 +32,14 @@ function Submissions() {
 
   const debouncedSearch = useDebounce(search);
 
-  const [status, setStatus] = useState("");
+  const [status, setStatus] = useState(() => searchParams.get("status") || "");
+
+  useEffect(() => {
+    const statusParam = searchParams.get("status");
+    if (statusParam !== null) {
+      setStatus(statusParam);
+    }
+  }, [searchParams]);
 
   const [page, setPage] = useState(1);
 
@@ -269,6 +276,7 @@ function Submissions() {
       </div>
 
       <DataTable
+        headerColor="#8b5cf6"
         columns={columns}
         data={submissions}
         loading={loading}

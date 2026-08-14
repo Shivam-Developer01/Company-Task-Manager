@@ -12,6 +12,19 @@ function RecentActivitiesCard({
 }) {
   const navigate = useNavigate();
 
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
+  const taskBaseUrl = user?.role === "employee" ? "/employee/tasks" : "/tasks";
+
+  const handleRowClick = (activity) => {
+    const taskId =
+      activity.task?._id ||
+      (typeof activity.task === "string" ? activity.task : null);
+
+    if (taskId) {
+      navigate(`${taskBaseUrl}?task=${taskId}`);
+    }
+  };
+
   return (
     <div className="dashboard-card">
       <div className="dashboard-card-header">
@@ -34,22 +47,30 @@ function RecentActivitiesCard({
         </div>
       ) : (
         <div className="activity-list">
-          {activities.map((activity) => (
-            <div
-              key={activity._id}
-              className="activity-item"
-            >
-              <div className="activity-content">
-                <h4>{activity.action}</h4>
+          {activities.map((activity) => {
+            const taskId =
+              activity.task?._id ||
+              (typeof activity.task === "string" ? activity.task : null);
+            const isClickable = Boolean(taskId);
 
-                <p>{activity.performedBy?.name || "System"}</p>
+            return (
+              <div
+                key={activity._id}
+                className={`activity-item ${isClickable ? "clickable" : ""}`}
+                onClick={() => isClickable && handleRowClick(activity)}
+              >
+                <div className="activity-content">
+                  <h4>{activity.action}</h4>
+
+                  <p>{activity.performedBy?.name || "System"}</p>
+                </div>
+
+                <span className="activity-time">
+                  {formatRelativeTime(activity.createdAt)}
+                </span>
               </div>
-
-              <span className="activity-time">
-                {formatRelativeTime(activity.createdAt)}
-              </span>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

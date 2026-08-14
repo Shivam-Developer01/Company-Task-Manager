@@ -14,6 +14,7 @@ const {
   updateUser,
   toggleUserStatus,
   resetUserPassword,
+  getUserActiveTasksCount,
 } = require("../services/user/userManagementService");
 
 module.exports = {
@@ -28,6 +29,7 @@ module.exports = {
   updateUser,
   toggleUserStatus,
   resetUserPassword,
+  getUserActiveTasksCount,
 
   changePassword,
   getMyProfile,

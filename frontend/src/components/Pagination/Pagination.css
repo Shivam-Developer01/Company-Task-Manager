@@ -1,65 +1,61 @@
 .pagination {
   display: flex;
-
   justify-content: flex-end;
-
   align-items: center;
-
-  gap: 8px;
-
-  margin-top: 24px;
-
+  gap: 6px;
+  margin-top: 16px;
   flex-wrap: wrap;
 }
 
 .page-btn,
 .page-number {
-  min-width: 40px;
-
-  height: 40px;
-
-  border: none;
-
-  border-radius: 10px;
-
-  background: white;
-
-  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
-
+  min-width: 36px;
+  height: 36px;
+  padding: 0 10px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #334155;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
   cursor: pointer;
-
-  font-size: 14px;
-
+  font-size: 13.5px;
   font-weight: 600;
-
-  transition: 0.25s;
+  transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .page-btn:hover:not(:disabled),
 .page-number:hover {
-  background: #2563eb;
-
-  color: white;
+  background: #f1f5f9;
+  color: #2563eb;
+  border-color: #cbd5e1;
 }
 
 .page-number.active {
   background: #2563eb;
+  color: #ffffff;
+  border-color: #2563eb;
+}
 
-  color: white;
+.page-number.active:hover {
+  background: #1d4ed8;
+  color: #ffffff;
 }
 
 .page-btn:disabled {
-  opacity: 0.45;
-
+  opacity: 0.4;
   cursor: not-allowed;
+  background: #f8fafc;
+  border-color: #e2e8f0;
 }
 
 .page-dots {
-  padding: 0 8px;
-
+  padding: 0 6px;
+  font-size: 13.5px;
   font-weight: 600;
-
-  color: #64748b;
+  color: #94a3b8;
 }
 
 @media (max-width: 768px) {
@@ -69,8 +65,8 @@
 
   .page-btn,
   .page-number {
-    min-width: 36px;
-
-    height: 36px;
+    min-width: 34px;
+    height: 34px;
+    font-size: 13px;
   }
 }

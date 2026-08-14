@@ -11,8 +11,10 @@ const CustomError = require("../../errors/CustomError");
 const REPORT_TYPES = {
   EMPLOYEE_PERFORMANCE: "EMPLOYEE_PERFORMANCE",
   MANAGER_TEAM_PERFORMANCE: "MANAGER_TEAM_PERFORMANCE",
+  MANAGER_PERFORMANCE: "MANAGER_PERFORMANCE",
   ADMIN_COMPANY_PERFORMANCE: "ADMIN_COMPANY_PERFORMANCE",
   PROJECT_PERFORMANCE: "PROJECT_PERFORMANCE",
+  DEPARTMENT_PERFORMANCE: "DEPARTMENT_PERFORMANCE",
 };
 
 /**
@@ -156,6 +158,66 @@ const MANAGER_TEAM_PERFORMANCE_REPORT_SCHEMA = {
     },
     insufficientData: {
       type: "boolean",
+      required: false,
+    },
+  },
+};
+
+/**
+ * Manager Performance & Effectiveness Report Schema Specification.
+ */
+const MANAGER_PERFORMANCE_REPORT_SCHEMA = {
+  name: "ManagerPerformanceReportSchema",
+  version: "1.0",
+  type: "object",
+  properties: {
+    reportType: {
+      type: "string",
+      required: true,
+    },
+    summary: {
+      type: "string",
+      required: true,
+      minLength: 1,
+      maxLength: 2500,
+    },
+    whatsGoingWell: {
+      type: "array",
+      required: true,
+      items: { type: "string" },
+    },
+    attentionAreas: {
+      type: "array",
+      required: true,
+      items: { type: "string" },
+    },
+    managerComparisonInsights: {
+      type: "array",
+      required: true,
+      items: { type: "string" },
+    },
+    workloadInsights: {
+      type: "array",
+      required: true,
+      items: { type: "string" },
+    },
+    departmentInsights: {
+      type: "array",
+      required: true,
+      items: { type: "string" },
+    },
+    evidence: {
+      type: "array",
+      required: true,
+      items: { type: "string" },
+    },
+    recommendations: {
+      type: "array",
+      required: true,
+      items: { type: "string" },
+    },
+    limitations: {
+      type: "string",
       required: false,
     },
   },
@@ -307,6 +369,115 @@ const PROJECT_PERFORMANCE_REPORT_SCHEMA = {
 };
 
 /**
+ * Department Performance Report Schema Specification (V4 Specification).
+ */
+const DEPARTMENT_PERFORMANCE_REPORT_SCHEMA = {
+  name: "DepartmentPerformanceReportSchema",
+  version: "1.0",
+  type: "object",
+  properties: {
+    reportType: {
+      type: "string",
+      required: true,
+    },
+    executiveSummary: {
+      type: "string",
+      required: true,
+      minLength: 1,
+      maxLength: 2500,
+    },
+    departmentHealth: {
+      type: "string",
+      required: false,
+      enum: ["healthy", "stable", "needs_attention"],
+    },
+    whatsGoingWell: {
+      type: "array",
+      required: true,
+      items: { type: "string" },
+    },
+    attentionAreas: {
+      type: "array",
+      required: true,
+      items: { type: "string" },
+    },
+    workforceInsights: {
+      type: "array",
+      required: false,
+      items: { type: "string" },
+    },
+    taskDeliveryInsights: {
+      type: "array",
+      required: false,
+      items: { type: "string" },
+    },
+    workloadInsights: {
+      type: "array",
+      required: false,
+      items: { type: "string" },
+    },
+    managerInsights: {
+      type: "array",
+      required: false,
+      items: { type: "string" },
+    },
+    employeeInsights: {
+      type: "array",
+      required: false,
+      items: { type: "string" },
+    },
+    projectInsights: {
+      type: "array",
+      required: false,
+      items: { type: "string" },
+    },
+    departmentComparisons: {
+      type: "array",
+      required: false,
+      items: { type: "string" },
+    },
+    bestPerformingDepartments: {
+      type: "array",
+      required: false,
+      items: { type: "string" },
+    },
+    departmentsRequiringAttention: {
+      type: "array",
+      required: false,
+      items: { type: "string" },
+    },
+    bottlenecks: {
+      type: "array",
+      required: true,
+      items: { type: "string" },
+    },
+    trends: {
+      type: "string",
+      required: true,
+      enum: ["improving", "stable", "declining", "insufficient_data"],
+    },
+    evidence: {
+      type: "array",
+      required: true,
+      items: { type: "string" },
+    },
+    recommendations: {
+      type: "array",
+      required: true,
+      items: { type: "string" },
+    },
+    limitations: {
+      type: "string",
+      required: false,
+    },
+    insufficientData: {
+      type: "boolean",
+      required: false,
+    },
+  },
+};
+
+/**
  * Centralized Mapping of Report Configurations.
  */
 const REPORT_CONFIGS = {
@@ -348,6 +519,23 @@ Rules & Guidelines:
 7. Recommendations must be purely informational advice (e.g., "Clear pending review queue"). Never attempt database actions or task mutations.
 8. Respond ONLY with valid JSON matching the specified report schema.`,
   },
+  [REPORT_TYPES.MANAGER_PERFORMANCE]: {
+    reportType: REPORT_TYPES.MANAGER_PERFORMANCE,
+    allowedRoles: [ROLES.MANAGER, ROLES.ADMIN],
+    contextType: CONTEXT_TYPES.MANAGER_PERFORMANCE_REPORT,
+    schema: MANAGER_PERFORMANCE_REPORT_SCHEMA,
+    systemInstruction: `You are an executive operational analyst performing a dedicated Manager Performance & Effectiveness Report for the Task Manager application.
+Analyze the pre-authorized manager metrics, manager workload burden, review turnaround, department comparisons, and factual delivery indicators provided inside <AUTHORIZED_APPLICATION_DATA>.
+
+Rules & Guidelines:
+1. Base all analysis strictly on facts and numbers inside <AUTHORIZED_APPLICATION_DATA>.
+2. Do NOT invent metrics, manager rankings, fake performance scores, or unassigned tasks.
+3. Focus specifically on manager effectiveness, manager-level performance comparisons, workload distribution, department insights, and evidence-backed positive/attention signals.
+4. Do NOT invent fake performance scores, leadership traits, or unsupported historical trends.
+5. Provide evidence-based managerComparisonInsights, workloadInsights, and departmentInsights.
+6. Recommendations must be purely informational management advisory advice.
+7. Respond ONLY with valid JSON matching the specified report schema.`,
+  },
   [REPORT_TYPES.ADMIN_COMPANY_PERFORMANCE]: {
     reportType: REPORT_TYPES.ADMIN_COMPANY_PERFORMANCE,
     allowedRoles: [ROLES.ADMIN],
@@ -386,6 +574,24 @@ Rules & Guidelines:
 7. Recommendations must be purely informational project advice (e.g., "Clear pending review queue in Phase 2"). Never attempt database actions or task mutations.
 8. Respond ONLY with valid JSON matching the specified report schema.`,
   },
+  [REPORT_TYPES.DEPARTMENT_PERFORMANCE]: {
+    reportType: REPORT_TYPES.DEPARTMENT_PERFORMANCE,
+    allowedRoles: [ROLES.ADMIN],
+    contextType: CONTEXT_TYPES.DEPARTMENT_REPORT,
+    schema: DEPARTMENT_PERFORMANCE_REPORT_SCHEMA,
+    systemInstruction: `You are an executive AI organizational department analyst performing a dedicated Department Performance Report for the Task Manager application.
+Analyze the pre-authorized department metrics, workforce distribution, manager oversight, task delivery velocity, workload concentration, project health, and evidence-backed operational indicators inside <AUTHORIZED_APPLICATION_DATA>.
+
+Rules & Guidelines:
+1. Base all analysis strictly on facts and numbers inside <AUTHORIZED_APPLICATION_DATA>.
+2. Do NOT invent metrics, fake department scores, employee morale, leadership quality, or fake historical data.
+3. The report subject MUST remain the DEPARTMENT as a whole. Do NOT turn this into an individual employee, manager, or project report.
+4. If scopeMode is "SINGLE_DEPARTMENT", analyze department workforce, task execution, manager workload, project impacts, evidence-backed positives, and attention areas for that specific department.
+5. If scopeMode is "ALL_DEPARTMENTS", compare performance across authorized departments, identify best-performing departments and departments requiring attention.
+6. Provide evidence-based workforceInsights, taskDeliveryInsights, workloadInsights, managerInsights, and projectInsights.
+7. Recommendations must be purely informational management/departmental advisory advice.
+8. Respond ONLY with valid JSON matching the specified report schema.`,
+  },
 };
 
 /**
@@ -405,8 +611,10 @@ module.exports = {
   BASE_REPORT_SCHEMA,
   EMPLOYEE_PERFORMANCE_REPORT_SCHEMA,
   MANAGER_TEAM_PERFORMANCE_REPORT_SCHEMA,
+  MANAGER_PERFORMANCE_REPORT_SCHEMA,
   ADMIN_COMPANY_PERFORMANCE_REPORT_SCHEMA,
   PROJECT_PERFORMANCE_REPORT_SCHEMA,
+  DEPARTMENT_PERFORMANCE_REPORT_SCHEMA,
   REPORT_CONFIGS,
   getReportConfig,
 };

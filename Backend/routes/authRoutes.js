@@ -12,6 +12,7 @@ const {
   updateUser,
   toggleUserStatus,
   resetUserPassword,
+  getUserActiveTasksCount,
   changePassword,
   getMyProfile,
   getUserOptions,
@@ -33,6 +34,13 @@ router.get(
   auth,
   authorize("admin", "manager"),
   getUserOptions,
+);
+
+router.get(
+  "/users/:id/active-tasks-count",
+  auth,
+  authorize("admin", "manager"),
+  getUserActiveTasksCount,
 );
 
 router.get("/users/:id", auth, authorize("admin", "manager"), getUserById);

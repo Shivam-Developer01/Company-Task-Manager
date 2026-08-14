@@ -8,11 +8,61 @@ function DataTable({
   sortField,
   sortOrder,
   onSort,
+  headerColor = "#2563eb",
 }) {
+  const tableStyle = {
+    "--header-bg": headerColor,
+  };
+
   if (loading) {
     return (
-      <div className="table-wrapper">
-        <table className="data-table">
+      <div className="table-card">
+        <div className="table-scroll-container">
+          <table className="data-table" style={tableStyle}>
+            <thead>
+              <tr>
+                {columns.map((column) => (
+                  <th
+                    key={column.key}
+                    onClick={() =>
+                      column.sortable && onSort && onSort(column.key)
+                    }
+                    className={column.sortable ? "sortable" : ""}
+                  >
+                    <div className="th-content">
+                      <span>{column.label}</span>
+                      {column.sortable && (
+                        <span className={`sort-arrow ${sortField === column.key ? "active" : ""}`}>
+                          {sortField === column.key ? (sortOrder === "asc" ? "▲" : "▼") : "↕"}
+                        </span>
+                      )}
+                    </div>
+                  </th>
+                ))}
+              </tr>
+            </thead>
+
+            <tbody>
+              {[...Array(6)].map((_, index) => (
+                <tr key={index}>
+                  {columns.map((column) => (
+                    <td key={column.key}>
+                      <div className="skeleton-cell" />
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="table-card">
+      <div className="table-scroll-container">
+        <table className="data-table" style={tableStyle}>
           <thead>
             <tr>
               {columns.map((column) => (
@@ -23,71 +73,44 @@ function DataTable({
                   }
                   className={column.sortable ? "sortable" : ""}
                 >
-                  {column.label}
-
-                  {column.sortable && sortField === column.key && (
-                    <span className="sort-arrow">
-                      {sortOrder === "asc" ? "▲" : "▼"}
-                    </span>
-                  )}
+                  <div className="th-content">
+                    <span>{column.label}</span>
+                    {column.sortable && (
+                      <span className={`sort-arrow ${sortField === column.key ? "active" : ""}`}>
+                        {sortField === column.key ? (sortOrder === "asc" ? "▲" : "▼") : "↕"}
+                      </span>
+                    )}
+                  </div>
                 </th>
               ))}
             </tr>
           </thead>
 
           <tbody>
-            {[...Array(8)].map((_, index) => (
-              <tr key={index}>
-                {columns.map((column) => (
-                  <td key={column.key}>
-                    <div className="skeleton-cell" />
-                  </td>
-                ))}
+            {data.length === 0 ? (
+              <tr>
+                <td colSpan={columns.length} className="empty-cell">
+                  <div className="empty-state">
+                    <div className="empty-icon">📂</div>
+                    <h3>No Records Found</h3>
+                    <p>{emptyMessage}</p>
+                  </div>
+                </td>
               </tr>
-            ))}
+            ) : (
+              data.map((row, rowIndex) => (
+                <tr key={row._id || row.id || rowIndex}>
+                  {columns.map((column) => (
+                    <td key={column.key}>
+                      {column.render ? column.render(row) : row[column.key]}
+                    </td>
+                  ))}
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>
-    );
-  }
-
-  return (
-    <div className="table-wrapper">
-      <table className="data-table">
-        <thead>
-          <tr>
-            {columns.map((column) => (
-              <th key={column.key}>{column.label}</th>
-            ))}
-          </tr>
-        </thead>
-
-        <tbody>
-          {data.length === 0 ? (
-            <tr>
-              <td colSpan={columns.length} className="empty-cell">
-                <div className="empty-state">
-                  <div className="empty-icon">📂</div>
-
-                  <h3>No Records Found</h3>
-
-                  <p>{emptyMessage}</p>
-                </div>
-              </td>
-            </tr>
-          ) : (
-            data.map((row) => (
-              <tr key={row._id}>
-                {columns.map((column) => (
-                  <td key={column.key}>
-                    {column.render ? column.render(row) : row[column.key]}
-                  </td>
-                ))}
-              </tr>
-            ))
-          )}
-        </tbody>
-      </table>
     </div>
   );
 }

@@ -33,6 +33,12 @@ const userService = {
     return response.data;
   },
 
+  getActiveTasksCount: async (id) => {
+    const response = await api.get(`/auth/users/${id}/active-tasks-count`);
+
+    return response.data;
+  },
+
   resetPassword: async (id) => {
     const response = await api.patch(`/auth/users/${id}/reset-password`);
 
