@@ -128,7 +128,7 @@ function EmployeeTaskDrawer({
             <h4>Checklist</h4>
 
             {task.checklist?.length ? (
-              <div className="task-d-checklist">
+                <div className="task-d-checklist">
                 {task.checklist.map((item) => (
                   <div
                     key={item._id}
@@ -156,7 +156,7 @@ function EmployeeTaskDrawer({
                 {task.referenceAttachments.map((file, index) => (
                   <a
                     key={index}
-                    href={`${API_BASE_URL}${file.fileUrl}`}
+                    href={file.fileUrl?.startsWith("http") ? file.fileUrl : `${API_BASE_URL}${file.fileUrl}`}
                     target="_blank"
                     rel="noreferrer"
                     className="attachment-card"
@@ -206,6 +206,7 @@ function EmployeeTaskDrawer({
               </div>
             )}
           </div>
+          <div className="task-d-checklist">
           {task.checklist.map((item) => (
             <div
               key={item._id}
@@ -221,6 +222,7 @@ function EmployeeTaskDrawer({
               <span>{item.title}</span>
             </div>
           ))}
+          </div>
           {task.status === "Assigned" && (
             <div className="task-drawer-actions">
               <button className="danger-d-btn" onClick={() => onReject(task)}>

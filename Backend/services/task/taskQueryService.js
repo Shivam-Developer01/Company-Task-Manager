@@ -2,10 +2,9 @@ const Task = require("../../models/Task");
 const CustomError = require("../../errors/CustomError");
 
 const { ROLES } = require("../../constants/constants");
-
 const { getAccessibleProjectIds } = require("../access/projectAccess");
-
 const { getAccessibleTask } = require("../access/taskAccess");
+const { transformAttachments } = require("../../utils/supabaseStorage");
 
 const getAllTasks = async (req, res) => {
   const {
@@ -133,6 +132,14 @@ const getAllTasks = async (req, res) => {
 
   const totalTasks = await Task.countDocuments(finalQuery);
 
+  const formattedTasks = await Promise.all(
+    tasks.map(async (t) => {
+      const obj = t.toObject();
+      obj.referenceAttachments = await transformAttachments(obj.referenceAttachments);
+      return obj;
+    }),
+  );
+
   res.status(200).json({
     success: true,
 
@@ -142,9 +149,9 @@ const getAllTasks = async (req, res) => {
 
     totalPages: Math.ceil(totalTasks / limit),
 
-    count: tasks.length,
+    count: formattedTasks.length,
 
-    data: tasks,
+    data: formattedTasks,
   });
 };
 
@@ -165,9 +172,14 @@ const getTaskById = async (req, res) => {
   await task.populate("createdBy", "name");
   await task.populate("updatedBy", "name");
 
+  const taskObj = task.toObject();
+  taskObj.referenceAttachments = await transformAttachments(
+    taskObj.referenceAttachments,
+  );
+
   res.status(200).json({
     success: true,
-    data: task,
+    data: taskObj,
   });
 };
 

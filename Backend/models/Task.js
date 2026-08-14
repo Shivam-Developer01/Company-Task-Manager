@@ -23,6 +23,8 @@ const AttachmentSchema = new mongoose.Schema(
     fileUrl: String,
     mimeType: String,
     fileSize: Number,
+    storagePath: String,
+    bucket: String,
   },
   { _id: false },
 );

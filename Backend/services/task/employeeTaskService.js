@@ -9,8 +9,8 @@ const createNotification = require("../../utils/createNotification");
 const getNotificationRecipients = require("../../utils/getNotificationRecipients");
 
 const { TASK_STATUS, NOTIFICATION_TYPE } = require("../../constants/constants");
-
 const { getAccessibleTask } = require("../access/taskAccess");
+const { transformAttachments } = require("../../utils/supabaseStorage");
 
 const getMyTasks = async (req, res) => {
   const { search, status, priority, project, filter, page = 1, limit = 10 } = req.query;
@@ -80,13 +80,21 @@ const getMyTasks = async (req, res) => {
 
   const totalTasks = await Task.countDocuments(query);
 
+  const formattedTasks = await Promise.all(
+    tasks.map(async (t) => {
+      const obj = t.toObject();
+      obj.referenceAttachments = await transformAttachments(obj.referenceAttachments);
+      return obj;
+    }),
+  );
+
   res.status(200).json({
     success: true,
     totalTasks,
     currentPage: Number(page),
     totalPages: Math.ceil(totalTasks / Number(limit)),
-    count: tasks.length,
-    data: tasks,
+    count: formattedTasks.length,
+    data: formattedTasks,
   });
 };
 

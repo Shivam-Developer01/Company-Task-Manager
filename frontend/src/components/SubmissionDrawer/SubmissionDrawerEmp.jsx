@@ -167,7 +167,7 @@ function SubmissionDrawer({ isOpen, submission, onClose }) {
                 {submission.task.referenceAttachments.map((file, index) => (
                   <a
                     key={index}
-                    href={`${API_BASE_URL}${file.fileUrl}`}
+                    href={file.fileUrl?.startsWith("http") ? file.fileUrl : `${API_BASE_URL}${file.fileUrl}`}
                     target="_blank"
                     rel="noreferrer"
                     className="attachment-card"
@@ -204,7 +204,7 @@ function SubmissionDrawer({ isOpen, submission, onClose }) {
                 {submission.attachments.map((file, index) => (
                   <a
                     key={index}
-                    href={`${API_BASE_URL}${file.fileUrl}`}
+                    href={file.fileUrl?.startsWith("http") ? file.fileUrl : `${API_BASE_URL}${file.fileUrl}`}
                     target="_blank"
                     rel="noreferrer"
                     className="attachment-card"

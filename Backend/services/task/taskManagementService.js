@@ -1,3 +1,4 @@
+const path = require("path");
 const Task = require("../../models/Task");
 const User = require("../../models/User");
 const Project = require("../../models/Project");
@@ -14,8 +15,14 @@ const {
 } = require("../../constants/constants");
 
 const { getProjectFilter } = require("../access/projectAccess");
-
 const { getAccessibleTask } = require("../access/taskAccess");
+const {
+  BUCKETS,
+  uploadFile,
+  createSignedUrl,
+  deleteFiles,
+  getSafeFileName,
+} = require("../../utils/supabaseStorage");
 
 const createTask = async (req, res) => {
   const {
@@ -113,18 +120,8 @@ const createTask = async (req, res) => {
     }
   }
 
-  // Upload reference attachments
-  const referenceAttachments = (req.files || []).map((file) => ({
-    fileName: file.filename,
-    originalName: file.originalname,
-    fileUrl: `/uploads/references/${file.filename}`,
-    mimeType: file.mimetype,
-    fileSize: file.size,
-  }));
-
   // Parse checklist if it comes as JSON string (multipart/form-data)
   let parsedChecklist = [];
-
   if (checklist) {
     try {
       parsedChecklist =
@@ -134,20 +131,83 @@ const createTask = async (req, res) => {
     }
   }
 
-  // Create task
-  const task = await Task.create({
-    title,
-    description,
-    project: projectDoc ? projectDoc._id : null,
-    phase: phaseDoc ? phaseDoc._id : null,
-    assignedTo,
-    assignedBy: req.user.userId,
-    priority,
-    dueDate,
-    checklist: parsedChecklist,
-    referenceAttachments,
-    createdBy: req.user.userId,
-  });
+  // Upload reference attachments to Supabase Storage
+  const referenceAttachments = [];
+  const uploadedPaths = [];
+
+  if (req.files && req.files.length > 0) {
+    const tempBatchId = Date.now() + "-" + Math.round(Math.random() * 1e9);
+
+    for (const file of req.files) {
+      const safeName = getSafeFileName(file.originalname);
+      const uniqueFileName = `${Date.now()}-${Math.round(Math.random() * 1e9)}-${safeName}`;
+      const storagePath = `references/${tempBatchId}/${uniqueFileName}`;
+
+      try {
+        const uploadResult = await uploadFile({
+          bucket: BUCKETS.REFERENCES,
+          path: storagePath,
+          fileBuffer: file.buffer,
+          mimeType: file.mimetype,
+        });
+
+        uploadedPaths.push(uploadResult.storagePath);
+
+        const signedUrl = await createSignedUrl({
+          bucket: BUCKETS.REFERENCES,
+          path: uploadResult.storagePath,
+          expiresIn: 3600,
+        });
+
+        referenceAttachments.push({
+          fileName: uniqueFileName,
+          originalName: file.originalname,
+          fileUrl: signedUrl || "",
+          mimeType: file.mimetype,
+          fileSize: file.size,
+          storagePath: uploadResult.storagePath,
+          bucket: BUCKETS.REFERENCES,
+        });
+      } catch (uploadErr) {
+        if (uploadedPaths.length > 0) {
+          await deleteFiles({
+            bucket: BUCKETS.REFERENCES,
+            paths: uploadedPaths,
+          });
+        }
+        throw new CustomError(
+          "Unable to upload the attachment. The task was not created. Please try again.",
+          500,
+        );
+      }
+    }
+  }
+
+  // Create task with compensating cleanup if MongoDB task creation fails
+  let task;
+  try {
+    task = await Task.create({
+      title,
+      description,
+      project: projectDoc ? projectDoc._id : null,
+      phase: phaseDoc ? phaseDoc._id : null,
+      assignedTo,
+      assignedBy: req.user.userId,
+      priority,
+      dueDate,
+      checklist: parsedChecklist,
+      referenceAttachments,
+      createdBy: req.user.userId,
+    });
+  } catch (dbErr) {
+    if (uploadedPaths.length > 0) {
+      await deleteFiles({
+        bucket: BUCKETS.REFERENCES,
+        paths: uploadedPaths,
+      });
+    }
+    throw dbErr;
+  }
 
   // Activity log
   await createActivity({
@@ -319,14 +379,52 @@ const updateTask = async (req, res) => {
   if (dueDate !== undefined) task.dueDate = dueDate;
   if (checklist !== undefined) task.checklist = checklist;
 
+  const newlyUploadedPaths = [];
   if (req.files?.length) {
-    const newAttachments = req.files.map((file) => ({
-      fileName: file.filename,
-      originalName: file.originalname,
-      fileUrl: `/uploads/references/${file.filename}`,
-      mimeType: file.mimetype,
-      fileSize: file.size,
-    }));
+    const newAttachments = [];
+    for (const file of req.files) {
+      const safeName = getSafeFileName(file.originalname);
+      const uniqueFileName = `${Date.now()}-${Math.round(Math.random() * 1e9)}-${safeName}`;
+      const storagePath = `references/${task._id}/${uniqueFileName}`;
+
+      try {
+        const uploadResult = await uploadFile({
+          bucket: BUCKETS.REFERENCES,
+          path: storagePath,
+          fileBuffer: file.buffer,
+          mimeType: file.mimetype,
+        });
+
+        newlyUploadedPaths.push(uploadResult.storagePath);
+
+        const signedUrl = await createSignedUrl({
+          bucket: BUCKETS.REFERENCES,
+          path: uploadResult.storagePath,
+          expiresIn: 3600,
+        });
+
+        newAttachments.push({
+          fileName: uniqueFileName,
+          originalName: file.originalname,
+          fileUrl: signedUrl || "",
+          mimeType: file.mimetype,
+          fileSize: file.size,
+          storagePath: uploadResult.storagePath,
+          bucket: BUCKETS.REFERENCES,
+        });
+      } catch (uploadErr) {
+        if (newlyUploadedPaths.length > 0) {
+          await deleteFiles({
+            bucket: BUCKETS.REFERENCES,
+            paths: newlyUploadedPaths,
+          });
+        }
+        throw new CustomError(
+          "Unable to upload reference attachment. Task update failed.",
+          500,
+        );
+      }
+    }
 
     task.referenceAttachments.push(...newAttachments);
 
@@ -339,7 +437,17 @@ const updateTask = async (req, res) => {
 
   task.updatedBy = req.user.userId;
 
-  await task.save();
+  try {
+    await task.save();
+  } catch (dbErr) {
+    if (newlyUploadedPaths.length > 0) {
+      await deleteFiles({
+        bucket: BUCKETS.REFERENCES,
+        paths: newlyUploadedPaths,
+      });
+    }
+    throw dbErr;
+  }
 
   await createActivity({
     task: task._id,

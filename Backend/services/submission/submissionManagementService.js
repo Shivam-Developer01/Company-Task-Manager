@@ -1,3 +1,4 @@
+const path = require("path");
 const Submission = require("../../models/Submission");
 const Task = require("../../models/Task");
 const User = require("../../models/User");
@@ -15,6 +16,13 @@ const {
 } = require("../../constants/constants");
 
 const { getAccessibleSubmission } = require("../access/submissionAccess");
+const {
+  BUCKETS,
+  uploadFile,
+  createSignedUrl,
+  deleteFiles,
+  getSafeFileName,
+} = require("../../utils/supabaseStorage");
 
 const submitTask = async (req, res) => {
   const task = await Task.findOne({
@@ -41,6 +49,7 @@ const submitTask = async (req, res) => {
       400,
     );
   }
+
   // Require either a message or at least one attachment
   if (!req.body.message?.trim() && (!req.files || req.files.length === 0)) {
     throw new CustomError(
@@ -49,31 +58,84 @@ const submitTask = async (req, res) => {
     );
   }
 
-  const attachments = (req.files || []).map((file) => ({
-    fileName: file.filename,
-    originalName: file.originalname,
-    fileUrl: `/uploads/submissions/${file.filename}`,
-    mimeType: file.mimetype,
-    fileSize: file.size,
-  }));
+  // Upload submission files to Supabase Storage
+  const attachments = [];
+  const uploadedPaths = [];
+
+  if (req.files && req.files.length > 0) {
+    for (const file of req.files) {
+      const safeName = getSafeFileName(file.originalname);
+      const uniqueFileName = `${Date.now()}-${Math.round(Math.random() * 1e9)}-${safeName}`;
+      const storagePath = `submissions/${task._id}/${uniqueFileName}`;
+
+      try {
+        const uploadResult = await uploadFile({
+          bucket: BUCKETS.SUBMISSIONS,
+          path: storagePath,
+          fileBuffer: file.buffer,
+          mimeType: file.mimetype,
+        });
+
+        uploadedPaths.push(uploadResult.storagePath);
+
+        const signedUrl = await createSignedUrl({
+          bucket: BUCKETS.SUBMISSIONS,
+          path: uploadResult.storagePath,
+          expiresIn: 3600,
+        });
+
+        attachments.push({
+          fileName: uniqueFileName,
+          originalName: file.originalname,
+          fileUrl: signedUrl || "",
+          mimeType: file.mimetype,
+          fileSize: file.size,
+          storagePath: uploadResult.storagePath,
+          bucket: BUCKETS.SUBMISSIONS,
+        });
+      } catch (uploadErr) {
+        if (uploadedPaths.length > 0) {
+          await deleteFiles({
+            bucket: BUCKETS.SUBMISSIONS,
+            paths: uploadedPaths,
+          });
+        }
+        throw new CustomError(
+          "Unable to upload submission attachment. Submission was not created.",
+          500,
+        );
+      }
+    }
+  }
 
   const submissionNumber =
     (await Submission.countDocuments({
       task: task._id,
     })) + 1;
 
-  const submission = await Submission.create({
-    task: task._id,
-    submittedBy: req.user.userId,
-    submissionNumber,
-    message: req.body.message || "",
-    attachments,
-  });
+  let submission;
+  try {
+    submission = await Submission.create({
+      task: task._id,
+      submittedBy: req.user.userId,
+      submissionNumber,
+      message: req.body.message || "",
+      attachments,
+    });
 
-  task.status = TASK_STATUS.SUBMITTED;
-  task.updatedBy = req.user.userId;
+    task.status = TASK_STATUS.SUBMITTED;
+    task.updatedBy = req.user.userId;
 
-  await task.save();
+    await task.save();
+  } catch (dbErr) {
+    if (uploadedPaths.length > 0) {
+      await deleteFiles({
+        bucket: BUCKETS.SUBMISSIONS,
+        paths: uploadedPaths,
+      });
+    }
+    throw dbErr;
+  }
 
   await task.populate([
     {

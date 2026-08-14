@@ -6,6 +6,7 @@ const {
   getSubmissionFilter,
   getAccessibleSubmission,
 } = require("../access/submissionAccess");
+const { transformAttachments } = require("../../utils/supabaseStorage");
 
 const getMySubmissions = async (req, res) => {
   const {
@@ -58,6 +59,17 @@ const getMySubmissions = async (req, res) => {
 
   const totalSubmissions = await Submission.countDocuments(query);
 
+  const formattedSubmissions = await Promise.all(
+    submissions.map(async (s) => {
+      const obj = s.toObject();
+      obj.attachments = await transformAttachments(obj.attachments);
+      if (obj.task && obj.task.referenceAttachments) {
+        obj.task.referenceAttachments = await transformAttachments(obj.task.referenceAttachments);
+      }
+      return obj;
+    }),
+  );
+
   res.status(200).json({
     success: true,
 
@@ -67,9 +79,9 @@ const getMySubmissions = async (req, res) => {
 
     totalSubmissions,
 
-    count: submissions.length,
+    count: formattedSubmissions.length,
 
-    data: submissions,
+    data: formattedSubmissions,
   });
 };
 
@@ -157,13 +169,24 @@ const getAllSubmissions = async (req, res) => {
 
   const totalSubmissions = await Submission.countDocuments(query);
 
+  const formattedSubmissions = await Promise.all(
+    submissions.map(async (s) => {
+      const obj = s.toObject();
+      obj.attachments = await transformAttachments(obj.attachments);
+      if (obj.task && obj.task.referenceAttachments) {
+        obj.task.referenceAttachments = await transformAttachments(obj.task.referenceAttachments);
+      }
+      return obj;
+    }),
+  );
+
   res.status(200).json({
     success: true,
     totalSubmissions,
     currentPage: Number(page),
     totalPages: Math.ceil(totalSubmissions / Number(limit)),
-    count: submissions.length,
-    data: submissions,
+    count: formattedSubmissions.length,
+    data: formattedSubmissions,
   });
 };
 
@@ -198,9 +221,15 @@ const getSubmissionById = async (req, res) => {
   await submission.populate("submittedBy", "name employeeId");
   await submission.populate("reviewedBy", "name role");
 
+  const subObj = submission.toObject();
+  subObj.attachments = await transformAttachments(subObj.attachments);
+  if (subObj.task && subObj.task.referenceAttachments) {
+    subObj.task.referenceAttachments = await transformAttachments(subObj.task.referenceAttachments);
+  }
+
   res.status(200).json({
     success: true,
-    data: submission,
+    data: subObj,
   });
 };
 

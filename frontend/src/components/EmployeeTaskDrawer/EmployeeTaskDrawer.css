@@ -140,6 +140,7 @@
 }
 
 .task-d-checklist {
+  margin-bottom: 12px;
   display: flex;
   flex-direction: column;
   gap: 12px;
