@@ -17,8 +17,6 @@ const ROLE_CONFIGS = {
     description: "Current work requiring attention across the company.",
     emptyMessage: "No major workload items currently require attention.",
     routes: {
-      overdue: "/tasks?filter=overdue",
-      dueSoon: "/tasks?filter=dueSoon",
       pendingReview: "/submissions",
       awaitingAcceptance: "/tasks?status=Assigned",
     },
@@ -28,8 +26,6 @@ const ROLE_CONFIGS = {
     description: "Current work requiring attention across your accessible projects.",
     emptyMessage: "No team workload items currently require attention.",
     routes: {
-      overdue: "/tasks?filter=overdue",
-      dueSoon: "/tasks?filter=dueSoon",
       pendingReview: "/submissions",
       awaitingAcceptance: "/tasks?status=Assigned",
     },
@@ -39,8 +35,6 @@ const ROLE_CONFIGS = {
     description: "Your current work requiring attention.",
     emptyMessage: "You're all caught up.",
     routes: {
-      overdue: "/employee/tasks?filter=overdue",
-      dueSoon: "/employee/tasks?filter=dueSoon",
       pendingReview: "/employee/submissions",
       awaitingAcceptance: "/employee/tasks?status=Assigned",
     },
@@ -52,25 +46,18 @@ function WorkloadAttentionCard({ role = "employee", workloadAttention }) {
   const config = ROLE_CONFIGS[role?.toLowerCase()] || ROLE_CONFIGS.employee;
 
   const overdueCount = workloadAttention?.overdue || 0;
-  const dueSoonCount = workloadAttention?.dueSoon || 0;
   const pendingReviewCount = workloadAttention?.pendingReview || 0;
   const awaitingAcceptanceCount = workloadAttention?.awaitingAcceptance || 0;
 
   const totalAttentionCount =
-    overdueCount + dueSoonCount + pendingReviewCount + awaitingAcceptanceCount;
+    overdueCount + pendingReviewCount + awaitingAcceptanceCount;
 
   const chartData = [
     {
       name: "Overdue",
       count: overdueCount,
       color: "#ef4444",
-      route: config.routes.overdue,
-    },
-    {
-      name: "Due Soon",
-      count: dueSoonCount,
-      color: "#f59e0b",
-      route: config.routes.dueSoon,
+      route: null,
     },
     {
       name: "Pending Review",
@@ -134,7 +121,7 @@ function WorkloadAttentionCard({ role = "employee", workloadAttention }) {
                       <div className="workload-tooltip">
                         <strong>{data.name}</strong>
                         <span>{data.count} item{data.count === 1 ? "" : "s"}</span>
-                        <small>Click to view</small>
+                        {data.route && <small>Click to view</small>}
                       </div>
                     );
                   }
@@ -147,7 +134,11 @@ function WorkloadAttentionCard({ role = "employee", workloadAttention }) {
                 onClick={(data) => handleBarClick(data)}
               >
                 {chartData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.color} cursor="pointer" />
+                  <Cell
+                    key={`cell-${index}`}
+                    fill={entry.color}
+                    cursor={entry.route ? "pointer" : "default"}
+                  />
                 ))}
               </Bar>
             </BarChart>
@@ -157,9 +148,9 @@ function WorkloadAttentionCard({ role = "employee", workloadAttention }) {
             {chartData.map((item, idx) => (
               <div
                 key={idx}
-                className="legend-item clickable"
-                onClick={() => navigate(item.route)}
-                title={`View ${item.name}`}
+                className={`legend-item ${item.route ? "clickable" : "display-only"}`}
+                onClick={() => item.route && navigate(item.route)}
+                title={item.route ? `View ${item.name}` : `${item.name}`}
               >
                 <span className="legend-dot" style={{ backgroundColor: item.color }} />
                 <span className="legend-name">{item.name}</span>

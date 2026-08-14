@@ -92,6 +92,11 @@
   transform: translateY(-1px);
 }
 
+.legend-item.display-only {
+  cursor: default;
+  user-select: none;
+}
+
 .legend-dot {
   width: 8px;
   height: 8px;
