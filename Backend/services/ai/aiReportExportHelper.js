@@ -57,6 +57,7 @@ const REPORT_SOURCE_METRICS_CONFIG = {
     { label: "Overdue Tasks", path: "tasks.overdueTasks", format: "count" },
     { label: "Pending Reviews", path: "tasks.pendingReviews", format: "count" },
     { label: "High-Priority Overdue", path: "tasks.highPriorityOverdue", format: "count" },
+    { label: "Avg. Review Turnaround", path: "tasks.averageReviewTurnaroundDays", format: "days" },
   ],
 
   PROJECT_PERFORMANCE: [

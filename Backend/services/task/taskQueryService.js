@@ -120,7 +120,7 @@ const getAllTasks = async (req, res) => {
   };
 
   const tasks = await Task.find(finalQuery)
-    .populate("assignedTo", "name employeeId")
+    .populate("assignedTo", "name employeeId isActive")
     .populate("assignedBy", "name")
     .populate("project", "name")
     .populate("phase", "name")
@@ -164,7 +164,7 @@ const getTaskById = async (req, res) => {
 
   await task.populate(
     "assignedTo",
-    "name employeeId department designation email",
+    "name employeeId department designation email isActive",
   );
   await task.populate("assignedBy", "name");
   await task.populate("project", "name description");

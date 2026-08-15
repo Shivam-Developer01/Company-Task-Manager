@@ -33,7 +33,25 @@ const updateProjectMembers = async (req, res) => {
   // Remove duplicate ids
   const uniqueMembers = [...new Set(members)];
 
-  if (uniqueMembers.length === 0) {
+  // Preserve existing active manager members of the project
+  const existingManagerMembers = await User.find({
+    _id: { $in: project.members },
+    role: ROLES.MANAGER,
+    isActive: true,
+  }).select("_id");
+
+  const existingManagerIds = existingManagerMembers.map((m) =>
+    m._id.toString(),
+  );
+
+  const finalMembers = [
+    ...new Set([
+      ...existingManagerIds,
+      ...uniqueMembers.map((id) => id.toString()),
+    ]),
+  ];
+
+  if (finalMembers.length === 0) {
     project.members = [];
     project.updatedBy = req.user.userId;
 
@@ -47,19 +65,21 @@ const updateProjectMembers = async (req, res) => {
   }
 
   // Fetch active project members (Managers + Employees)
-  const validMembers = await User.find({
-    _id: { $in: uniqueMembers },
-    role: {
-      $in: [ROLES.MANAGER, ROLES.EMPLOYEE],
-    },
-    isActive: true,
-  }).select("_id");
+  if (uniqueMembers.length > 0) {
+    const validMembers = await User.find({
+      _id: { $in: uniqueMembers },
+      role: {
+        $in: [ROLES.MANAGER, ROLES.EMPLOYEE],
+      },
+      isActive: true,
+    }).select("_id");
 
-  if (validMembers.length !== uniqueMembers.length) {
-    throw new CustomError(
-      "One or more selected members are invalid, inactive, or not allowed in projects",
-      400,
-    );
+    if (validMembers.length !== uniqueMembers.length) {
+      throw new CustomError(
+        "One or more selected members are invalid, inactive, or not allowed in projects",
+        400,
+      );
+    }
   }
 
   // -------------------------------
@@ -68,7 +88,7 @@ const updateProjectMembers = async (req, res) => {
 
   const removedMembers = project.members.filter(
     (memberId) =>
-      !uniqueMembers.some((id) => id.toString() === memberId.toString()),
+      !finalMembers.some((id) => id === memberId.toString()),
   );
 
   if (removedMembers.length > 0) {
@@ -117,16 +137,16 @@ const updateProjectMembers = async (req, res) => {
 
   const oldMembers = project.members.map((id) => id.toString());
 
-  const addedMembers = uniqueMembers.filter(
-    (id) => !oldMembers.includes(id.toString()),
+  const addedMembers = finalMembers.filter(
+    (id) => !oldMembers.includes(id),
   );
 
   const removedMemberIds = oldMembers.filter(
-    (id) => !uniqueMembers.includes(id.toString()),
+    (id) => !finalMembers.includes(id),
   );
 
   // Save managers + selected employees
-  project.members = uniqueMembers;
+  project.members = finalMembers;
   project.updatedBy = req.user.userId;
 
   await project.save();

@@ -139,6 +139,11 @@ const generateReportDocxBuffer = async (reportPayload) => {
 
   children.push(new Paragraph({ text: "", spacing: { after: 240 } }));
 
+  // Department Month-over-Month Historical Comparison
+  if (reportType === "DEPARTMENT_PERFORMANCE") {
+    renderDocxHistoricalComparison(children, reportData);
+  }
+
   // --------------------------------------------------------------------------
   // 3. AI Executive Analysis
   // --------------------------------------------------------------------------
@@ -315,6 +320,130 @@ const generateReportDocxBuffer = async (reportPayload) => {
   });
 
   return await Packer.toBuffer(doc);
+};
+
+/** Render Month-over-Month Historical Comparison Section in DOCX */
+const renderDocxHistoricalComparison = (children, reportData) => {
+  const aiAnalysis = reportData.aiAnalysis || {};
+  const sourceMetrics = reportData.sourceMetrics || {};
+  const hc = sourceMetrics.historicalComparison || aiAnalysis.historicalComparison;
+
+  const sectionTitle = hc?.previousPeriod
+    ? `Month-over-Month Historical Comparison (vs. ${hc.previousPeriod})`
+    : "Month-over-Month Historical Comparison";
+
+  children.push(
+    new Paragraph({
+      text: sectionTitle,
+      heading: HeadingLevel.HEADING_2,
+      alignment: AlignmentType.LEFT,
+      spacing: { before: 160, after: 100 },
+    })
+  );
+
+  if (!hc || !hc.metrics) {
+    children.push(
+      new Paragraph({
+        children: [
+          new TextRun({
+            text: "Historical department performance comparison is not currently available.",
+            italic: true,
+            color: "64748B",
+          }),
+        ],
+        spacing: { after: 160 },
+      })
+    );
+    return;
+  }
+
+  const m = hc.metrics;
+  const rowsData = [];
+
+  if (m.completionRate) {
+    const deltaStr = m.completionRate.deltaPercentagePoints > 0
+      ? `+${m.completionRate.deltaPercentagePoints} pp`
+      : `${m.completionRate.deltaPercentagePoints} pp`;
+    rowsData.push({
+      metric: "Completion Rate",
+      current: `${m.completionRate.current}%`,
+      previous: `${m.completionRate.previous}%`,
+      delta: deltaStr,
+      trend: m.completionRate.direction ? m.completionRate.direction.toUpperCase() : "STABLE",
+    });
+  }
+
+  if (m.overdueRate) {
+    const deltaStr = m.overdueRate.deltaPercentagePoints > 0
+      ? `+${m.overdueRate.deltaPercentagePoints} pp`
+      : `${m.overdueRate.deltaPercentagePoints} pp`;
+    rowsData.push({
+      metric: "Overdue Rate",
+      current: `${m.overdueRate.current}%`,
+      previous: `${m.overdueRate.previous}%`,
+      delta: deltaStr,
+      trend: m.overdueRate.direction ? m.overdueRate.direction.toUpperCase() : "STABLE",
+    });
+  }
+
+  if (m.activeTasks) {
+    const deltaStr = m.activeTasks.delta > 0 ? `+${m.activeTasks.delta}` : `${m.activeTasks.delta}`;
+    rowsData.push({
+      metric: "Active Tasks",
+      current: String(m.activeTasks.current),
+      previous: String(m.activeTasks.previous),
+      delta: deltaStr,
+      trend: "-",
+    });
+  }
+
+  if (m.rejectionRate) {
+    const deltaStr = m.rejectionRate.deltaPercentagePoints > 0
+      ? `+${m.rejectionRate.deltaPercentagePoints} pp`
+      : `${m.rejectionRate.deltaPercentagePoints} pp`;
+    rowsData.push({
+      metric: "Rejection Rate",
+      current: `${m.rejectionRate.current}%`,
+      previous: `${m.rejectionRate.previous}%`,
+      delta: deltaStr,
+      trend: m.rejectionRate.direction ? m.rejectionRate.direction.toUpperCase() : "STABLE",
+    });
+  }
+
+  const tableRows = [
+    new TableRow({
+      children: [
+        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Metric", bold: true })] })], width: { size: 28, type: WidthType.PERCENTAGE }, shading: { fill: "EEF2FF" } }),
+        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Current", bold: true })] })], width: { size: 18, type: WidthType.PERCENTAGE }, shading: { fill: "EEF2FF" } }),
+        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Previous", bold: true })] })], width: { size: 18, type: WidthType.PERCENTAGE }, shading: { fill: "EEF2FF" } }),
+        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Delta", bold: true })] })], width: { size: 18, type: WidthType.PERCENTAGE }, shading: { fill: "EEF2FF" } }),
+        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "Trend", bold: true })] })], width: { size: 18, type: WidthType.PERCENTAGE }, shading: { fill: "EEF2FF" } }),
+      ],
+    }),
+  ];
+
+  rowsData.forEach((r) => {
+    tableRows.push(
+      new TableRow({
+        children: [
+          new TableCell({ children: [new Paragraph({ text: r.metric })], width: { size: 28, type: WidthType.PERCENTAGE } }),
+          new TableCell({ children: [new Paragraph({ text: r.current, bold: true })], width: { size: 18, type: WidthType.PERCENTAGE } }),
+          new TableCell({ children: [new Paragraph({ text: r.previous })], width: { size: 18, type: WidthType.PERCENTAGE } }),
+          new TableCell({ children: [new Paragraph({ text: r.delta, bold: true })], width: { size: 18, type: WidthType.PERCENTAGE } }),
+          new TableCell({ children: [new Paragraph({ text: r.trend })], width: { size: 18, type: WidthType.PERCENTAGE } }),
+        ],
+      })
+    );
+  });
+
+  children.push(
+    new Table({
+      rows: tableRows,
+      width: { size: 100, type: WidthType.PERCENTAGE },
+    })
+  );
+
+  children.push(new Paragraph({ text: "", spacing: { after: 160 } }));
 };
 
 module.exports = {

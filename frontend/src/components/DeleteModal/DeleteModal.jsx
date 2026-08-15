@@ -1,3 +1,11 @@
+/*
+DEAD_CODE_AUDIT:
+CONFIRMED UNUSED.
+Reason: DeleteModal component is never imported or rendered anywhere in the application. ConfirmationModal is used across all pages instead.
+Temporarily commented for regression testing.
+DO NOT DELETE until final cleanup phase.
+*/
+/*
 import "./DeleteModal.css";
 
 function DeleteModal({
@@ -53,3 +61,4 @@ function DeleteModal({
 }
 
 export default DeleteModal;
+*/

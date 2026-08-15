@@ -1,3 +1,11 @@
+/*
+DEAD_CODE_AUDIT:
+CONFIRMED UNUSED.
+Reason: Obsolete duplicate TaskModal component file located in components/Modal/. Active component rendered across pages is components/TaskModal/TaskModal.jsx.
+Temporarily commented for regression testing.
+DO NOT DELETE until final cleanup phase.
+*/
+/*
 import { useState, useEffect } from "react";
 import "./TaskModal.css";
 
@@ -230,3 +238,4 @@ function TaskModal({
 }
 
 export default TaskModal;
+*/

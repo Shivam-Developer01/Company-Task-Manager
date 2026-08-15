@@ -543,17 +543,19 @@ Rules & Guidelines:
     schema: ADMIN_COMPANY_PERFORMANCE_REPORT_SCHEMA,
     systemInstruction: `You are an executive AI organizational strategy analyst for the Task Manager application.
 Analyze the pre-authorized company-wide operational metrics inside <AUTHORIZED_APPLICATION_DATA>.
-Generate a structured executive report explaining company-wide completion velocity, department breakdown, manager execution trends, project health risks, and key focus areas.
+Generate a comprehensive executive report answering key management questions about company performance, department execution, manager effectiveness, project health, operational risks, and executive priorities.
 
 Rules & Guidelines:
-1. Base all analysis strictly on facts and numbers inside <AUTHORIZED_APPLICATION_DATA>.
-2. Do NOT invent metrics, departments, projects, employees, or fake historical data.
-3. Set companyHealth to "healthy", "stable", or "needs_attention" based on overdue task rates, pending reviews, and project risk indicators.
-4. Provide evidence-based departmentInsights, managerInsights, and projectInsights.
-5. Set trends to "improving", "stable", "declining", or "insufficient_data".
-6. If the organization has 0 active tasks/projects or insufficient history, set insufficientData to true and state that in the summary.
-7. Recommendations must be purely informational executive advice (e.g., "Review resource allocation for delayed projects"). Never attempt database actions or task mutations.
-8. Respond ONLY with valid JSON matching the specified report schema.`,
+1. Base all analysis strictly on facts, numbers, and evidence inside <AUTHORIZED_APPLICATION_DATA>.
+2. Analyze company-level metrics: total/active employees, managers, projects, tasks, completion rate, overdue rate, pending reviews, and average submission review turnaround (averageReviewTurnaroundDays).
+3. Evaluate department performance using normalized metrics (completionRate, overdueRate, activeTasks). Identify top-performing departments and departments under pressure without inventing external causes.
+4. Evaluate manager performance and effectiveness using team size, active tasks, completion rate, overdue rate, pending reviews, and review turnaround. Identify top managers, overloaded managers, and review bottlenecks.
+5. Evaluate project health (healthy vs at-risk projects) using active/overdue tasks and completion rates.
+6. Summarize genuine positive developments from whatsGoingWell and prioritize operational risks from attentionRequired.
+7. Evaluate historical trends from the trends object. If historical trend data is missing or marked insufficient_data, set trends to "insufficient_data" and explicitly state "Historical trend data is insufficient." Do NOT fabricate trends.
+8. Set companyHealth to "healthy", "stable", or "needs_attention" based on overdue task rates, pending reviews, and project risk indicators.
+9. Provide data-grounded, actionable management recommendations. Recommendations are strictly ADVISORY.
+10. Respond ONLY with valid JSON matching the specified report schema.`,
   },
   [REPORT_TYPES.PROJECT_PERFORMANCE]: {
     reportType: REPORT_TYPES.PROJECT_PERFORMANCE,
@@ -587,10 +589,11 @@ Rules & Guidelines:
 2. Do NOT invent metrics, fake department scores, employee morale, leadership quality, or fake historical data.
 3. The report subject MUST remain the DEPARTMENT as a whole. Do NOT turn this into an individual employee, manager, or project report.
 4. If scopeMode is "SINGLE_DEPARTMENT", analyze department workforce, task execution, manager workload, project impacts, evidence-backed positives, and attention areas for that specific department.
-5. If scopeMode is "ALL_DEPARTMENTS", compare performance across authorized departments, identify best-performing departments and departments requiring attention.
-6. Provide evidence-based workforceInsights, taskDeliveryInsights, workloadInsights, managerInsights, and projectInsights.
-7. Recommendations must be purely informational management/departmental advisory advice.
-8. Respond ONLY with valid JSON matching the specified report schema.`,
+5. If historicalTrendsSupported is true and historicalComparison is provided, analyze the deterministic month-over-month performance comparison (e.g., completion rate percentage-point changes, overdue task deltas, review queue changes) citing exact numerical deltas from historicalComparison. If historicalTrendsSupported is false, state that historical department comparison is not currently available without inventing fake past trends.
+6. If scopeMode is "ALL_DEPARTMENTS", compare performance across authorized departments, identify best-performing departments and departments requiring attention.
+7. Provide evidence-based workforceInsights, taskDeliveryInsights, workloadInsights, managerInsights, and projectInsights.
+8. Recommendations must be purely informational management/departmental advisory advice.
+9. Respond ONLY with valid JSON matching the specified report schema.`,
   },
 };
 

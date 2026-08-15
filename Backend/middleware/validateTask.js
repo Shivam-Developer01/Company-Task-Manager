@@ -1,3 +1,11 @@
+/*
+DEAD_CODE_AUDIT:
+CONFIRMED UNUSED.
+Reason: Obsolete task validation middleware superseded by validateCreateTask.js and validateUpdateTask.js. Never imported or registered in any route.
+Temporarily commented for regression testing.
+DO NOT DELETE until final cleanup phase.
+*/
+/*
 const validator = require("validator");
 
 const validateTask = (req, res, next) => {
@@ -68,3 +76,4 @@ const validateTask = (req, res, next) => {
 };
 
 module.exports = validateTask;
+*/

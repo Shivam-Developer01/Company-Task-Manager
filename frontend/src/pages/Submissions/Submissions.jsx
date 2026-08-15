@@ -180,21 +180,25 @@ function Submissions() {
       {
         key: "priority",
         label: "Priority",
-        render: (row) => (
-          <span
-            className={`priority-badge ${row.task.priority
-              .toLowerCase()
-              .replace(" ", "-")}`}
-          >
-            {row.task.priority}
-          </span>
-        ),
+        render: (row) =>
+          row.task?.priority ? (
+            <span
+              className={`priority-badge ${row.task.priority
+                .toLowerCase()
+                .replace(" ", "-")}`}
+            >
+              {row.task.priority}
+            </span>
+          ) : (
+            "-"
+          ),
       },
 
       {
         key: "dueDate",
         label: "Due Date",
         render: (row) => {
+          if (!row.task?.dueDate) return "-";
           const due = new Date(row.task.dueDate);
           const today = new Date();
 

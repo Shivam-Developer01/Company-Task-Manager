@@ -146,6 +146,12 @@ function AiRecommendationCard({
                 </p>
               </div>
 
+              {matchedCandidate?.deterministicScore != null && (
+                <span className="ai-rec-confidence-badge high" style={{ background: "#e6f4ea", color: "#137333", border: "1px solid #ceead6" }}>
+                  Match Score: {matchedCandidate.deterministicScore}%
+                </span>
+              )}
+
               {aiRec.confidence && (
                 <span className={`ai-rec-confidence-badge ${aiRec.confidence.toLowerCase()}`}>
                   {aiRec.confidence} Confidence
@@ -190,6 +196,24 @@ function AiRecommendationCard({
                       <div className="ai-rec-metric-label">Project Tasks</div>
                     </div>
                   )}
+
+                  {matchedCandidate.phaseHistory?.phaseTaskCount !== undefined && matchedCandidate.phaseHistory?.phaseTaskCount > 0 && (
+                    <div className="ai-rec-metric-card">
+                      <div className="ai-rec-metric-value">
+                        {matchedCandidate.phaseHistory.phaseTaskCount}
+                      </div>
+                      <div className="ai-rec-metric-label">Phase Tasks</div>
+                    </div>
+                  )}
+
+                  {matchedCandidate.performance?.onTimeRate && matchedCandidate.performance?.onTimeRate !== "N/A" && (
+                    <div className="ai-rec-metric-card">
+                      <div className="ai-rec-metric-value">
+                        {matchedCandidate.performance.onTimeRate}
+                      </div>
+                      <div className="ai-rec-metric-label">On-Time Rate</div>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -230,7 +254,7 @@ function AiRecommendationCard({
             <button
               type="button"
               className="ai-rec-use-btn"
-              onClick={() => onSelectEmployee(aiRec.recommendedEmployeeId)}
+              onClick={() => onSelectEmployee(aiRec.recommendedEmployeeId, aiRec.recommendedEmployeeName)}
             >
               ✓ Use Recommendation
             </button>

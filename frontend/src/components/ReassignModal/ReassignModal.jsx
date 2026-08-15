@@ -39,6 +39,27 @@ function ReassignModal({
     (employee) => employee._id !== task?.assignedTo?._id,
   );
 
+  const handleSelectRecommendedEmployee = (empId, empName) => {
+    if (!empId && !empName) return;
+
+    const matchedEmp = reassignableEmployees.find((e) => {
+      const eIdStr = (e._id || "").toString();
+      const empCodeStr = (e.employeeId || "").toString();
+      const targetIdStr = (empId || "").toString();
+
+      if (eIdStr === targetIdStr) return true;
+      if (empCodeStr && empCodeStr === targetIdStr) return true;
+      if (empName && e.name && e.name.trim().toLowerCase() === empName.trim().toLowerCase()) return true;
+      return false;
+    });
+
+    if (matchedEmp) {
+      setAssignedTo(matchedEmp._id.toString());
+    } else {
+      console.warn("Recommended employee not found in available options:", { empId, empName });
+    }
+  };
+
   return (
     <FormModal
       isOpen={isOpen}
@@ -62,7 +83,7 @@ function ReassignModal({
         {task?._id && (
           <AiRecommendationCard
             taskId={task._id}
-            onSelectEmployee={(empId) => setAssignedTo(empId)}
+            onSelectEmployee={(empId, empName) => handleSelectRecommendedEmployee(empId, empName)}
           />
         )}
 

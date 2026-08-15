@@ -48,8 +48,11 @@ const getDepartmentPerformanceAnalytics = async ({ viewer, targetDepartmentId = 
 
 /**
  * Single Selected Department Analytics Pipeline
+ * @param {string} departmentId
+ * @param {Object} [options] Optional pipeline options
+ * @param {boolean} [options.skipHistoricalComparison=false] Skip snapshot lookup if generating snapshot
  */
-const getSingleDepartmentAnalytics = async (departmentId) => {
+const getSingleDepartmentAnalytics = async (departmentId, options = {}) => {
   if (!mongoose.Types.ObjectId.isValid(departmentId)) {
     throw new CustomError("Invalid department ID format.", 400);
   }
@@ -447,10 +450,10 @@ const getSingleDepartmentAnalytics = async (departmentId) => {
     bottlenecks.push(`Review Queue Backlog: ${submissionMetricsRaw.pendingReviews} pending submission reviews.`);
   }
 
-  return {
+  const baseResult = {
     scopeMode: "SINGLE_DEPARTMENT",
     department: {
-      id: department._id,
+      id: department._id.toString(),
       name: department.name,
       code: department.code,
       isActive: department.isActive,
@@ -496,9 +499,121 @@ const getSingleDepartmentAnalytics = async (departmentId) => {
     whatsGoingWell,
     attentionAreas,
     bottlenecks,
-    trends: "insufficient_data",
-    historicalTrendsSupported: false,
-    limitations: "Historical department performance comparison is not currently available.",
+  };
+
+  let historicalComparison = null;
+  let historicalTrendsSupported = false;
+  let trendDirection = "insufficient_data";
+  let limitations = "Historical department performance comparison is not currently available.";
+
+  if (!options.skipHistoricalComparison) {
+    const { getPreviousDepartmentSnapshot, getCurrentPeriodString } = require("./departmentSnapshotService");
+    const currentPeriod = getCurrentPeriodString();
+    const previousSnapshot = await getPreviousDepartmentSnapshot(departmentId, currentPeriod);
+
+    if (previousSnapshot) {
+      // Derive previous rates using existing KPI formulas
+      const prevCompletionDenom = previousSnapshot.totalTasks - previousSnapshot.withdrawnTasks;
+      const prevCompletionRate =
+        prevCompletionDenom > 0
+          ? Number(((previousSnapshot.completedTasks / prevCompletionDenom) * 100).toFixed(2))
+          : 0;
+
+      const prevOnTimeRate =
+        previousSnapshot.completedTasks > 0
+          ? Number(((previousSnapshot.onTimeCompletedTasks / previousSnapshot.completedTasks) * 100).toFixed(2))
+          : 0;
+
+      const prevOverdueDenom = previousSnapshot.activeTasks + previousSnapshot.overdueTasks;
+      const prevOverdueRate =
+        prevOverdueDenom > 0
+          ? Number(((previousSnapshot.overdueTasks / prevOverdueDenom) * 100).toFixed(2))
+          : 0;
+
+      const prevRejectionRate =
+        previousSnapshot.totalSubmissions > 0
+          ? Number(((previousSnapshot.rejectedSubmissions / previousSnapshot.totalSubmissions) * 100).toFixed(2))
+          : 0;
+
+      // Calculate deterministic deltas
+      const completionRateDelta = Number((completionRate - prevCompletionRate).toFixed(2));
+      const overdueRateDelta = Number((overdueRate - prevOverdueRate).toFixed(2));
+      const rejectionRateDelta = Number((rejectionRate - prevRejectionRate).toFixed(2));
+      const activeTasksDelta = taskMetricsRaw.activeTasks - previousSnapshot.activeTasks;
+      const completedTasksDelta = taskMetricsRaw.completedTasks - previousSnapshot.completedTasks;
+      const overdueTasksDelta = taskMetricsRaw.overdueTasks - previousSnapshot.overdueTasks;
+      const pendingReviewsDelta = submissionMetricsRaw.pendingReviews - previousSnapshot.pendingReviews;
+
+      if (completionRateDelta > 2 || overdueRateDelta < -2) {
+        trendDirection = "improving";
+      } else if (completionRateDelta < -2 || overdueRateDelta > 2) {
+        trendDirection = "declining";
+      } else {
+        trendDirection = "stable";
+      }
+
+      historicalTrendsSupported = true;
+      limitations = null;
+
+      historicalComparison = {
+        previousPeriod: previousSnapshot.period,
+        previousSnapshotDate: previousSnapshot.snapshotDate,
+        metrics: {
+          completionRate: {
+            current: completionRate,
+            previous: prevCompletionRate,
+            deltaPercentagePoints: completionRateDelta,
+            direction: completionRateDelta > 0 ? "improving" : completionRateDelta < 0 ? "declining" : "stable",
+          },
+          overdueRate: {
+            current: overdueRate,
+            previous: prevOverdueRate,
+            deltaPercentagePoints: overdueRateDelta,
+            direction: overdueRateDelta < 0 ? "improving" : overdueRateDelta > 0 ? "declining" : "stable",
+          },
+          onTimeCompletionRate: {
+            current: onTimeCompletionRate,
+            previous: prevOnTimeRate,
+            deltaPercentagePoints: Number((onTimeCompletionRate - prevOnTimeRate).toFixed(2)),
+            direction: onTimeCompletionRate >= prevOnTimeRate ? "improving" : "declining",
+          },
+          rejectionRate: {
+            current: rejectionRate,
+            previous: prevRejectionRate,
+            deltaPercentagePoints: rejectionRateDelta,
+            direction: rejectionRateDelta < 0 ? "improving" : rejectionRateDelta > 0 ? "declining" : "stable",
+          },
+          activeTasks: {
+            current: taskMetricsRaw.activeTasks,
+            previous: previousSnapshot.activeTasks,
+            delta: activeTasksDelta,
+          },
+          completedTasks: {
+            current: taskMetricsRaw.completedTasks,
+            previous: previousSnapshot.completedTasks,
+            delta: completedTasksDelta,
+          },
+          overdueTasks: {
+            current: taskMetricsRaw.overdueTasks,
+            previous: previousSnapshot.overdueTasks,
+            delta: overdueTasksDelta,
+          },
+          pendingReviews: {
+            current: submissionMetricsRaw.pendingReviews,
+            previous: previousSnapshot.pendingReviews,
+            delta: pendingReviewsDelta,
+          },
+        },
+      };
+    }
+  }
+
+  return {
+    ...baseResult,
+    trends: trendDirection,
+    historicalTrendsSupported,
+    historicalComparison,
+    limitations,
   };
 };
 

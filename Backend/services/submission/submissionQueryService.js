@@ -2,6 +2,7 @@ const Submission = require("../../models/Submission");
 const Task = require("../../models/Task");
 const User = require("../../models/User");
 
+const { SUBMISSION_STATUS, TASK_STATUS } = require("../../constants/constants");
 const {
   getSubmissionFilter,
   getAccessibleSubmission,
@@ -44,12 +45,14 @@ const getMySubmissions = async (req, res) => {
   const submissions = await Submission.find(query)
     .populate({
       path: "task",
-      select: "title status priority dueDate project phase",
+      select: "title status priority dueDate project phase assignedTo",
       populate: [
         { path: "project", select: "name" },
         { path: "phase", select: "name" },
+        { path: "assignedTo", select: "name employeeId isActive" },
       ],
     })
+    .populate("submittedBy", "name employeeId isActive")
     .populate("reviewedBy", "name role")
     .sort({
       [sort]: order === "asc" ? 1 : -1,
@@ -153,13 +156,14 @@ const getAllSubmissions = async (req, res) => {
   const submissions = await Submission.find(query)
     .populate({
       path: "task",
-      select: "title status priority dueDate project phase",
+      select: "title status priority dueDate project phase assignedTo",
       populate: [
         { path: "project", select: "name" },
         { path: "phase", select: "name" },
+        { path: "assignedTo", select: "name employeeId isActive" },
       ],
     })
-    .populate("submittedBy", "name employeeId")
+    .populate("submittedBy", "name employeeId isActive")
     .populate("reviewedBy", "name role")
     .sort({
       [sort]: order === "asc" ? 1 : -1,
@@ -172,6 +176,16 @@ const getAllSubmissions = async (req, res) => {
   const formattedSubmissions = await Promise.all(
     submissions.map(async (s) => {
       const obj = s.toObject();
+      if (
+        s.status === SUBMISSION_STATUS.PENDING_REVIEW &&
+        obj.task &&
+        obj.task.status !== TASK_STATUS.SUBMITTED
+      ) {
+        await Task.findByIdAndUpdate(obj.task._id, {
+          status: TASK_STATUS.SUBMITTED,
+        });
+        obj.task.status = TASK_STATUS.SUBMITTED;
+      }
       obj.attachments = await transformAttachments(obj.attachments);
       if (obj.task && obj.task.referenceAttachments) {
         obj.task.referenceAttachments = await transformAttachments(obj.task.referenceAttachments);
@@ -209,7 +223,7 @@ const getSubmissionById = async (req, res) => {
       },
       {
         path: "assignedTo",
-        select: "name employeeId department designation",
+        select: "name employeeId department designation isActive",
       },
       {
         path: "assignedBy",
@@ -218,10 +232,20 @@ const getSubmissionById = async (req, res) => {
     ],
   });
 
-  await submission.populate("submittedBy", "name employeeId");
+  await submission.populate("submittedBy", "name employeeId isActive");
   await submission.populate("reviewedBy", "name role");
 
   const subObj = submission.toObject();
+  if (
+    submission.status === SUBMISSION_STATUS.PENDING_REVIEW &&
+    subObj.task &&
+    subObj.task.status !== TASK_STATUS.SUBMITTED
+  ) {
+    await Task.findByIdAndUpdate(subObj.task._id, {
+      status: TASK_STATUS.SUBMITTED,
+    });
+    subObj.task.status = TASK_STATUS.SUBMITTED;
+  }
   subObj.attachments = await transformAttachments(subObj.attachments);
   if (subObj.task && subObj.task.referenceAttachments) {
     subObj.task.referenceAttachments = await transformAttachments(subObj.task.referenceAttachments);

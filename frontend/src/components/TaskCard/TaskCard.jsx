@@ -1,3 +1,11 @@
+/*
+DEAD_CODE_AUDIT:
+CONFIRMED UNUSED.
+Reason: TaskCard component is never imported or rendered anywhere in the application. DataTables and Kanban cards handle task rendering across all pages.
+Temporarily commented for regression testing.
+DO NOT DELETE until final cleanup phase.
+*/
+/*
 import "./TaskCard.css";
 
 function TaskCard({ task, onEdit, onDelete }) {
@@ -35,3 +43,4 @@ function TaskCard({ task, onEdit, onDelete }) {
 }
 
 export default TaskCard;
+*/

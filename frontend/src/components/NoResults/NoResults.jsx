@@ -1,3 +1,11 @@
+/*
+DEAD_CODE_AUDIT:
+CONFIRMED UNUSED.
+Reason: NoResults component is never imported or rendered anywhere in the application. EmptyState and DataTable empty states are used instead.
+Temporarily commented for regression testing.
+DO NOT DELETE until final cleanup phase.
+*/
+/*
 import "./NoResults.css";
 
 function NoResults() {
@@ -10,3 +18,4 @@ function NoResults() {
 }
 
 export default NoResults;
+*/

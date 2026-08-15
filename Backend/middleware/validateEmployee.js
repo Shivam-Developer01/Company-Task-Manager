@@ -1,3 +1,11 @@
+/*
+DEAD_CODE_AUDIT:
+CONFIRMED UNUSED.
+Reason: Obsolete employee validation middleware superseded by validateCreateEmployee.js and validateUpdateEmployee.js. Never imported or registered in any route.
+Temporarily commented for regression testing.
+DO NOT DELETE until final cleanup phase.
+*/
+/*
 const validator = require("validator");
 
 const validateEmployee = (req, res, next) => {
@@ -55,3 +63,4 @@ const validateEmployee = (req, res, next) => {
 };
 
 module.exports = validateEmployee;
+*/

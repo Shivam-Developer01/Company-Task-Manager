@@ -50,9 +50,14 @@ app.use("/api/ai", aiRoutes);
 
 app.use(errorHandler);
 
+const { initDepartmentSnapshotScheduler } = require("./services/analytics/departmentSnapshotScheduler");
+
 const start = async () => {
   try {
     await connectDB();
+
+    // Initialize automatic monthly department snapshot scheduler
+    initDepartmentSnapshotScheduler();
 
     app.listen(3000, () => {
       console.log("Server running on port 3000");

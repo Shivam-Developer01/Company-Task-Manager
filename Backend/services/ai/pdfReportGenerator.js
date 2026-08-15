@@ -115,6 +115,11 @@ const generateReportPdfBuffer = (reportPayload) => {
         doc.y += 14;
       }
 
+      // Department Month-over-Month Historical Comparison Section
+      if (reportType === "DEPARTMENT_PERFORMANCE") {
+        renderPdfHistoricalComparison(doc, reportData, startX, pageWidth, colors);
+      }
+
       // ────────────────────────────────────────────────────────────────────────
       // 3. AI Executive Analysis Section
       // ────────────────────────────────────────────────────────────────────────
@@ -294,12 +299,12 @@ const renderSectionHeader = (doc, title, colors, startX = 30) => {
 };
 
 /** Render a bold sub-heading with comfortable spacing below */
-const renderSubHeading = (doc, title, color) => {
+const renderSubHeading = (doc, title, color, startX = 30) => {
   doc
     .fontSize(10)
     .font("Helvetica-Bold")
     .fillColor(color)
-    .text(title);
+    .text(title, startX, doc.y, { align: "left" });
   doc.y += 7;
 };
 
@@ -353,6 +358,7 @@ const renderMetricsCards = (doc, metricPairs, startX, pageWidth, colors) => {
     count++;
   });
 
+  doc.x = startX;
   doc.y = currentY + cardHeight + 16;
 };
 
@@ -378,6 +384,128 @@ const renderStyledListBox = (doc, items, bgColor, bulletColor, textColor, startX
 
     doc.y = itemY + boxHeight + 4;
   });
+};
+
+/** Render Month-over-Month Historical Comparison Section in PDF */
+const renderPdfHistoricalComparison = (doc, reportData, startX, pageWidth, colors) => {
+  const aiAnalysis = reportData.aiAnalysis || {};
+  const sourceMetrics = reportData.sourceMetrics || {};
+  const hc = sourceMetrics.historicalComparison || aiAnalysis.historicalComparison;
+
+  ensureSpace(doc, 80);
+  renderSubHeading(
+    doc,
+    hc?.previousPeriod
+      ? `Month-over-Month Historical Comparison (vs. ${hc.previousPeriod})`
+      : "Month-over-Month Historical Comparison",
+    colors.primary
+  );
+
+  if (!hc || !hc.metrics) {
+    doc
+      .fontSize(8.5)
+      .font("Helvetica-Oblique")
+      .fillColor(colors.muted)
+      .text("Historical department performance comparison is not currently available.", startX, doc.y);
+    doc.y += 16;
+    return;
+  }
+
+  const m = hc.metrics;
+  const cards = [];
+
+  if (m.completionRate) {
+    const deltaStr = m.completionRate.deltaPercentagePoints > 0
+      ? `+${m.completionRate.deltaPercentagePoints} pp`
+      : `${m.completionRate.deltaPercentagePoints} pp`;
+    cards.push({
+      label: "Completion Rate",
+      current: `${m.completionRate.current}%`,
+      previous: `${m.completionRate.previous}%`,
+      delta: deltaStr,
+      trend: m.completionRate.direction ? m.completionRate.direction.toUpperCase() : "STABLE",
+    });
+  }
+
+  if (m.overdueRate) {
+    const deltaStr = m.overdueRate.deltaPercentagePoints > 0
+      ? `+${m.overdueRate.deltaPercentagePoints} pp`
+      : `${m.overdueRate.deltaPercentagePoints} pp`;
+    cards.push({
+      label: "Overdue Rate",
+      current: `${m.overdueRate.current}%`,
+      previous: `${m.overdueRate.previous}%`,
+      delta: deltaStr,
+      trend: m.overdueRate.direction ? m.overdueRate.direction.toUpperCase() : "STABLE",
+    });
+  }
+
+  if (m.activeTasks) {
+    const deltaStr = m.activeTasks.delta > 0 ? `+${m.activeTasks.delta}` : `${m.activeTasks.delta}`;
+    cards.push({
+      label: "Active Tasks",
+      current: String(m.activeTasks.current),
+      previous: String(m.activeTasks.previous),
+      delta: deltaStr,
+      trend: null,
+    });
+  }
+
+  if (m.rejectionRate) {
+    const deltaStr = m.rejectionRate.deltaPercentagePoints > 0
+      ? `+${m.rejectionRate.deltaPercentagePoints} pp`
+      : `${m.rejectionRate.deltaPercentagePoints} pp`;
+    cards.push({
+      label: "Rejection Rate",
+      current: `${m.rejectionRate.current}%`,
+      previous: `${m.rejectionRate.previous}%`,
+      delta: deltaStr,
+      trend: m.rejectionRate.direction ? m.rejectionRate.direction.toUpperCase() : "STABLE",
+    });
+  }
+
+  const cardWidth = (pageWidth - 10) / 2;
+  const cardHeight = 46;
+  const gap = 10;
+
+  let currentX = startX;
+  let currentY = doc.y;
+  let count = 0;
+
+  cards.forEach((card) => {
+    if (count > 0 && count % 2 === 0) {
+      currentX = startX;
+      currentY += cardHeight + gap;
+      ensureSpace(doc, cardHeight + gap);
+    }
+
+    doc.roundedRect(currentX, currentY, cardWidth, cardHeight, 5).fillAndStroke(colors.cardBg, colors.border);
+
+    doc
+      .fontSize(8)
+      .font("Helvetica-Bold")
+      .fillColor(colors.indigo)
+      .text(card.label.toUpperCase(), currentX + 8, currentY + 6);
+
+    doc
+      .fontSize(8.5)
+      .font("Helvetica")
+      .fillColor(colors.primary)
+      .text(`Current: ${card.current}   |   Previous: ${card.previous}`, currentX + 8, currentY + 20);
+
+    const subline = card.trend ? `Delta: ${card.delta}  (${card.trend})` : `Delta: ${card.delta}`;
+    doc
+      .fontSize(8)
+      .font("Helvetica-Bold")
+      .fillColor(colors.secondary)
+      .text(subline, currentX + 8, currentY + 32);
+
+    currentX += cardWidth + gap;
+    count++;
+  });
+
+  doc.x = startX;
+  doc.y = currentY + cardHeight + 14;
 };
 
 module.exports = {

@@ -143,7 +143,7 @@ function MySubmissions() {
         label: "Priority",
 
         render: (row) =>
-          row.task ? (
+          row.task?.priority ? (
             <span
               className={`priority-badge ${row.task.priority
                 .toLowerCase()

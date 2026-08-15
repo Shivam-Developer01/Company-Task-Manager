@@ -136,20 +136,23 @@ const RECOMMENDATION_CONFIGS = {
   [RECOMMENDATION_TYPES.TASK_ASSIGNMENT]: {
     recommendationType: RECOMMENDATION_TYPES.TASK_ASSIGNMENT,
     allowedRoles: [ROLES.MANAGER, ROLES.ADMIN],
-    contextType: CONTEXT_TYPES.PROJECT_REPORT,
+    contextType: CONTEXT_TYPES.TASK_ASSIGNMENT,
     schema: TASK_ASSIGNMENT_RECOMMENDATION_SCHEMA,
     systemInstruction: `You are an executive AI decision-support analyst for the Task Manager application.
-Analyze the pre-authorized task facts and candidate operational evidence inside <AUTHORIZED_APPLICATION_DATA>.
-Provide a structured advisory recommendation answering: "Who should I assign this task to?"
+Analyze the pre-authorized task facts, eligible candidates, workload metrics, performance metrics, and pre-calculated deterministic suitability scores inside <AUTHORIZED_APPLICATION_DATA>.
+Answer: "Who is the best eligible person to take this task RIGHT NOW, and WHY?"
 
 Rules & Guidelines:
-1. Base all observations strictly on facts and evidence inside <AUTHORIZED_APPLICATION_DATA>.
-2. Select ONLY from the supplied eligible candidates in <AUTHORIZED_APPLICATION_DATA>. Set recommendedEmployeeId to the candidate's exact employeeId ObjectId string.
-3. Do NOT invent candidates, employee IDs, skills, capacity, or unrecorded metrics.
-4. If candidate evidence is weak, equal, or insufficient, set insufficientEvidence to true, set noRecommendation to true, set confidence to "low", and omit recommendedEmployeeId.
-5. Provide explainable rationale, evidence, and confidence ("high", "medium", "low").
-6. Recommendations are strictly ADVISORY advice for human review. Never attempt database mutations or automated task execution.
-7. Respond ONLY with valid JSON matching the specified recommendation schema.`,
+1. Base all observations strictly on facts, metrics, and evidence inside <AUTHORIZED_APPLICATION_DATA>.
+2. Select ONLY from the supplied eligible candidates in <AUTHORIZED_APPLICATION_DATA>. Set recommendedEmployeeId to the recommended candidate's exact employeeId string and recommendedEmployeeName to their exact name.
+3. Use candidate workload (active tasks, overdue tasks, priority breakdown, deadline pressure), performance (completion rate, on-time rate, rejection rate), project membership (isProjectMember), phase/project experience, and deterministic suitability score (deterministicScore) to pick the strongest candidate.
+4. Do NOT respond with "No Clear Recommendation" if eligible candidates exist with valid workload and performance metrics inside <AUTHORIZED_APPLICATION_DATA>. Recommend the candidate with the highest overall suitability evidence.
+5. Handle both Independent Tasks (where taskFacts.project is null) and Project Tasks (where taskFacts.project is present). For Independent Tasks, evaluate all eligible active candidates based on workload and performance without requiring project membership. For Project Tasks, prioritize active project members.
+6. If a specific metric for a candidate is marked as unavailable or N/A (e.g. onTimeRate: "N/A"), do NOT discard the candidate; evaluate the candidate using their available metrics.
+7. In rationale, cite exact numerical metrics (e.g. active tasks, completion rate, overdue count, phase experience, deterministic score) comparing the selected candidate against alternatives. Explain important trade-offs if applicable.
+8. Do NOT invent candidates, employee codes, skills, estimated hours, or unrecorded metrics outside <AUTHORIZED_APPLICATION_DATA>.
+9. Recommendations are strictly ADVISORY advice for human decision-makers. Never attempt database mutations or automated task execution.
+10. Respond ONLY with valid JSON matching the specified recommendation schema.`,
   },
 };
 

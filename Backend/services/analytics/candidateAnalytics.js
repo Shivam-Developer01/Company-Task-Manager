@@ -42,10 +42,11 @@ const getCandidateEvidenceForTask = async (taskId, viewer) => {
 
   const taskObjectId = new mongoose.Types.ObjectId(taskId);
 
-  // 2. Fetch target task and populate project/phase details
+  // 2. Fetch target task and populate project/phase/assignedBy details
   const task = await Task.findById(taskObjectId)
     .populate("project", "name code members createdBy")
     .populate("phase", "name")
+    .populate("assignedBy", "name employeeId")
     .lean();
 
   if (!task || task.isArchived) {
@@ -94,14 +95,38 @@ const getCandidateEvidenceForTask = async (taskId, viewer) => {
         }
       : null,
     assignedTo: task.assignedTo ? task.assignedTo.toString() : null,
+    assignedBy: task.assignedBy
+      ? {
+          name: task.assignedBy.name,
+          employeeCode: task.assignedBy.employeeId || "",
+        }
+      : null,
   };
 
-  // 5. Find Eligible Active Candidates (Non-deactivated, non-archived employees)
+  // 5. Find Eligible Active Candidates (Matching ReassignModal project member eligibility)
   const candidateFilter = {
     role: ROLES.EMPLOYEE,
     isActive: { $ne: false },
     isArchived: { $ne: true },
   };
+
+  if (task.assignedTo) {
+    candidateFilter._id = { $ne: task.assignedTo };
+  }
+
+  if (task.project && Array.isArray(task.project.members) && task.project.members.length > 0) {
+    const projectMemberIds = task.project.members.map((m) =>
+      typeof m === "object" && m._id ? m._id.toString() : m.toString()
+    );
+    const eligibleMemberIds = projectMemberIds.filter(
+      (mId) => !task.assignedTo || mId !== task.assignedTo.toString()
+    );
+    if (candidateFilter._id) {
+      candidateFilter._id = { $in: eligibleMemberIds, $ne: task.assignedTo };
+    } else {
+      candidateFilter._id = { $in: eligibleMemberIds };
+    }
+  }
 
   const candidateUsers = await User.find(candidateFilter)
     .populate("department", "name")
@@ -109,10 +134,26 @@ const getCandidateEvidenceForTask = async (taskId, viewer) => {
     .select("name email employeeId department designation isActive")
     .lean();
 
+  if (candidateUsers.length === 0) {
+    const rawPayload = {
+      taskFacts,
+      candidateCount: 0,
+      candidates: [],
+    };
+    return {
+      success: true,
+      data: sanitizePayload(rawPayload),
+    };
+  }
+
   const today = new Date();
+  const threeDaysLater = new Date(today.getTime() + 3 * 24 * 60 * 60 * 1000);
+  const sevenDaysLater = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
+
+  const Submission = mongoose.models.Submission || require("../../models/Submission");
 
   // 6. Aggregate Factual Candidate Operational Evidence
-  const candidatesEvidence = await Promise.all(
+  const candidatesRaw = await Promise.all(
     candidateUsers.map(async (candidate) => {
       const candId = candidate._id;
 
@@ -121,37 +162,53 @@ const getCandidateEvidenceForTask = async (taskId, viewer) => {
         assignedTo: candId,
         isArchived: { $ne: true },
       })
-        .select("status dueDate project phase")
+        .select("status dueDate project phase priority completedAt updatedAt createdAt")
         .lean();
 
-      const activeTasks = candidateTasks.filter((t) =>
+      const activeTasksList = candidateTasks.filter((t) =>
         [
           TASK_STATUS.ASSIGNED,
           TASK_STATUS.ACCEPTED,
           TASK_STATUS.IN_PROGRESS,
         ].includes(t.status)
-      ).length;
+      );
+
+      const activeTasks = activeTasksList.length;
 
       const pendingReviews = candidateTasks.filter(
         (t) => t.status === TASK_STATUS.SUBMITTED
       ).length;
 
-      const overdueTasks = candidateTasks.filter(
-        (t) =>
-          t.dueDate &&
-          new Date(t.dueDate) < today &&
-          [
-            TASK_STATUS.ASSIGNED,
-            TASK_STATUS.ACCEPTED,
-            TASK_STATUS.IN_PROGRESS,
-          ].includes(t.status)
+      const overdueTasks = activeTasksList.filter(
+        (t) => t.dueDate && new Date(t.dueDate) < today
       ).length;
 
-      // Performance Metrics
-      const totalAssigned = candidateTasks.length;
-      const completedTasks = candidateTasks.filter(
-        (t) => t.status === TASK_STATUS.CLOSED
+      const priorityBreakdown = {
+        high: activeTasksList.filter((t) => t.priority === "High").length,
+        medium: activeTasksList.filter((t) => t.priority === "Medium").length,
+        low: activeTasksList.filter((t) => t.priority === "Low").length,
+      };
+
+      const dueWithin3Days = activeTasksList.filter(
+        (t) => t.dueDate && new Date(t.dueDate) >= today && new Date(t.dueDate) <= threeDaysLater
       ).length;
+
+      const dueWithin7Days = activeTasksList.filter(
+        (t) => t.dueDate && new Date(t.dueDate) >= today && new Date(t.dueDate) <= sevenDaysLater
+      ).length;
+
+      const deadlinePressure = {
+        dueWithin3Days,
+        dueWithin7Days,
+        overdue: overdueTasks,
+      };
+
+      // Performance Metrics & Submission Rejection Rate
+      const totalAssigned = candidateTasks.length;
+      const closedTasks = candidateTasks.filter(
+        (t) => t.status === TASK_STATUS.CLOSED
+      );
+      const completedTasks = closedTasks.length;
       const withdrawnTasks = candidateTasks.filter(
         (t) => t.status === TASK_STATUS.WITHDRAWN
       ).length;
@@ -162,7 +219,41 @@ const getCandidateEvidenceForTask = async (taskId, viewer) => {
           ? Number(((completedTasks / completionDenominator) * 100).toFixed(2))
           : 0;
 
+      let onTimeClosedCount = 0;
+      let totalClosedWithDueDate = 0;
+      closedTasks.forEach((t) => {
+        if (t.dueDate) {
+          totalClosedWithDueDate++;
+          const compDate = t.completedAt ? new Date(t.completedAt) : t.updatedAt ? new Date(t.updatedAt) : new Date();
+          if (compDate <= new Date(t.dueDate)) {
+            onTimeClosedCount++;
+          }
+        }
+      });
+
+      const onTimeRateNum =
+        totalClosedWithDueDate > 0
+          ? Number(((onTimeClosedCount / totalClosedWithDueDate) * 100).toFixed(1))
+          : null;
+
+      const candidateSubmissions = await Submission.find({
+        submittedBy: candId,
+      })
+        .select("status")
+        .lean();
+
+      const totalSubmissions = candidateSubmissions.length;
+      const rejectedSubmissions = candidateSubmissions.filter((s) => s.status === "Rejected").length;
+      const rejectionRate =
+        totalSubmissions > 0
+          ? Number(((rejectedSubmissions / totalSubmissions) * 100).toFixed(1))
+          : 0;
+
       // Project & Phase History Metrics
+      const isProjectMember = task.project && Array.isArray(task.project.members)
+        ? task.project.members.some((m) => (m._id || m).toString() === candId.toString())
+        : true;
+
       const projectTaskCount = task.project
         ? candidateTasks.filter(
             (t) => t.project && t.project.toString() === task.project._id.toString()
@@ -173,7 +264,7 @@ const getCandidateEvidenceForTask = async (taskId, viewer) => {
         ? candidateTasks.filter(
             (t) => t.phase && t.phase.toString() === task.phase._id.toString()
           ).length
-        : "unavailable";
+        : 0;
 
       return {
         employeeId: candId.toString(),
@@ -181,35 +272,112 @@ const getCandidateEvidenceForTask = async (taskId, viewer) => {
         employeeCode: candidate.employeeId || "",
         department: candidate.department?.name || "Unassigned",
         designation: candidate.designation?.title || "Staff",
-        workload: {
-          activeTasks,
-          pendingReviews,
-          overdueTasks,
-        },
-        performance: {
-          totalAssigned,
-          completedTasks,
-          completionRate,
-          onTimeRate: "unavailable",
-        },
-        projectHistory: {
-          projectTaskCount,
-        },
-        phaseHistory: {
-          phaseTaskCount,
-        },
+        isProjectMember,
+        activeTasks,
+        pendingReviews,
+        overdueTasks,
+        priorityBreakdown,
+        deadlinePressure,
+        totalAssigned,
+        completedTasks,
+        completionRate,
+        onTimeRateNum,
+        rejectionRate,
+        projectTaskCount,
+        phaseTaskCount,
       };
     })
   );
 
-  // 7. Construct Final Candidate Evidence DTO Payload
+  const totalTeamActiveTasks = candidatesRaw.reduce((sum, c) => sum + c.activeTasks, 0);
+
+  // 7. Calculate Deterministic Suitability Score & Factors for Each Candidate
+  const candidatesEvidence = candidatesRaw.map((cand) => {
+    const workloadShare =
+      totalTeamActiveTasks > 0
+        ? Number(((cand.activeTasks / totalTeamActiveTasks) * 100).toFixed(1))
+        : 0;
+
+    // Weighted Deterministic Suitability Score Formula (0 to 100)
+    let score = 50;
+
+    // Workload penalties
+    score -= Math.min(30, cand.activeTasks * 5);
+    score -= Math.min(30, cand.overdueTasks * 15);
+    score -= Math.min(24, cand.priorityBreakdown.high * 8);
+    score -= Math.min(15, cand.deadlinePressure.dueWithin3Days * 5);
+
+    // Performance bonuses & penalties
+    score += cand.completionRate * 0.25;
+    score += cand.onTimeRateNum !== null ? cand.onTimeRateNum * 0.15 : 7.5;
+    score -= cand.rejectionRate * 0.15;
+
+    // Project/Phase experience bonuses
+    score += cand.isProjectMember ? 10 : 0;
+    score += Math.min(15, cand.projectTaskCount * 3);
+    score += Math.min(12, cand.phaseTaskCount * 4);
+
+    const deterministicScore = Math.min(100, Math.max(0, Number(score.toFixed(1))));
+
+    // Human-readable suitability factors
+    const suitabilityFactors = [];
+    if (cand.activeTasks === 0) suitabilityFactors.push("Zero active task workload");
+    else if (cand.activeTasks <= 2) suitabilityFactors.push(`Low active workload (${cand.activeTasks} active task${cand.activeTasks > 1 ? "s" : ""})`);
+    else suitabilityFactors.push(`Carrying ${cand.activeTasks} active task(s) (${workloadShare}% work share)`);
+
+    if (cand.overdueTasks === 0) suitabilityFactors.push("0 overdue tasks");
+    else suitabilityFactors.push(`${cand.overdueTasks} task(s) overdue`);
+
+    if (cand.completionRate >= 80) suitabilityFactors.push(`High completion rate (${cand.completionRate}%)`);
+    if (cand.onTimeRateNum !== null && cand.onTimeRateNum >= 85) suitabilityFactors.push(`Strong on-time rate (${cand.onTimeRateNum}%)`);
+    if (cand.isProjectMember) suitabilityFactors.push("Assigned project team member");
+    if (cand.projectTaskCount > 0) suitabilityFactors.push(`Handled ${cand.projectTaskCount} task(s) in project`);
+    if (cand.phaseTaskCount > 0) suitabilityFactors.push(`Handled ${cand.phaseTaskCount} task(s) in phase`);
+
+    return {
+      employeeId: cand.employeeId,
+      name: cand.name,
+      employeeCode: cand.employeeCode,
+      department: cand.department,
+      designation: cand.designation,
+      isProjectMember: cand.isProjectMember,
+      deterministicScore,
+      suitabilityFactors,
+      workload: {
+        activeTasks: cand.activeTasks,
+        pendingReviews: cand.pendingReviews,
+        overdueTasks: cand.overdueTasks,
+        workloadShare: `${workloadShare}%`,
+        priorityBreakdown: cand.priorityBreakdown,
+        deadlinePressure: cand.deadlinePressure,
+      },
+      performance: {
+        totalAssigned: cand.totalAssigned,
+        completedTasks: cand.completedTasks,
+        completionRate: cand.completionRate,
+        onTimeRate: cand.onTimeRateNum !== null ? `${cand.onTimeRateNum}%` : "N/A",
+        rejectionRate: `${cand.rejectionRate}%`,
+      },
+      projectHistory: {
+        projectTaskCount: cand.projectTaskCount,
+      },
+      phaseHistory: {
+        phaseTaskCount: cand.phaseTaskCount,
+      },
+    };
+  });
+
+  // Sort candidates by deterministicScore descending
+  candidatesEvidence.sort((a, b) => b.deterministicScore - a.deterministicScore);
+
+  // 8. Construct Final Candidate Evidence DTO Payload
   const rawPayload = {
     taskFacts,
     candidateCount: candidatesEvidence.length,
     candidates: candidatesEvidence,
   };
 
-  // 8. Sanitize Payload (Recursively strip sensitive credentials/fields)
+  // 9. Sanitize Payload (Recursively strip sensitive credentials/fields)
   const sanitizedData = sanitizePayload(rawPayload);
 
   return {

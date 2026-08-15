@@ -48,4 +48,8 @@ router.get(
 // GET /api/analytics/company — Company-wide metrics (Admin only)
 router.get("/company", auth, authorize(ROLES.ADMIN), getCompanyAnalytics);
 
+// POST /api/analytics/department-snapshot — Trigger department snapshot generation (Admin only)
+const { triggerDepartmentSnapshot } = require("../controllers/analyticsController");
+router.post("/department-snapshot", auth, authorize(ROLES.ADMIN), triggerDepartmentSnapshot);
+
 module.exports = router;

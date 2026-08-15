@@ -48,30 +48,36 @@ const buildAiContext = async ({
   if (contextType === CONTEXT_TYPES.EMPLOYEE_REPORT) {
     const viewerRoleLower = (viewer.role || "").toLowerCase();
     const isAllEmployees =
-      !targetSubjectId ||
-      targetSubjectId === "all_employees" ||
-      targetSubjectId === "null" ||
-      targetSubjectId === "undefined";
+      (targetSubjectId === "all_employees" ||
+        targetSubjectId === "null" ||
+        targetSubjectId === "undefined" ||
+        !targetSubjectId) &&
+      viewerRoleLower !== ROLES.EMPLOYEE;
 
     if (isAllEmployees) {
-      if (viewerRoleLower === ROLES.EMPLOYEE) {
-        throw new CustomError(
-          "Forbidden: Employees are restricted to viewing their own performance report.",
-          403
-        );
-      }
       rawAnalytics = await getAllEmployeesPerformanceMetrics({ viewer });
       subjectInfo = {
         type: "all_employees",
         targetId: "all_employees",
-        name: viewerRoleLower === ROLES.ADMIN ? "All Employees (Company-wide)" : "All Accessible Team Employees",
+        name:
+          viewerRoleLower === ROLES.ADMIN
+            ? "All Employees (Company-wide)"
+            : "All Accessible Team Employees",
       };
     } else {
-      const effectiveSubjectId = targetSubjectId || viewer.userId;
+      const effectiveSubjectId =
+        viewerRoleLower === ROLES.EMPLOYEE
+          ? viewer.userId
+          : targetSubjectId &&
+            targetSubjectId !== "null" &&
+            targetSubjectId !== "undefined"
+          ? targetSubjectId
+          : viewer.userId;
+
       rawAnalytics = await getEmployeeMetrics(effectiveSubjectId);
       subjectInfo = {
         type: "employee",
-        targetId: effectiveSubjectId,
+        targetId: rawAnalytics?.employeeDetails?.employeeId || rawAnalytics?.employeeDetails?.name || "employee",
         employeeDetails: rawAnalytics?.employeeDetails || null,
         name: rawAnalytics?.employeeDetails?.name || "Employee",
       };
@@ -101,10 +107,10 @@ const buildAiContext = async ({
     subjectInfo = {
       type: "manager_team",
       targetId: targetManager
-        ? targetManager._id.toString()
+        ? targetManager.employeeId || targetManager.name
         : viewerRoleLower === ROLES.ADMIN
         ? "all_managers"
-        : viewer.userId,
+        : rawAnalytics?.managerInfo?.employeeId || rawAnalytics?.managerInfo?.name || "manager_team",
       name: targetManager
         ? targetManager.name
         : viewerRoleLower === ROLES.ADMIN
@@ -133,10 +139,10 @@ const buildAiContext = async ({
     subjectInfo = {
       type: "manager_performance",
       targetId: targetManager
-        ? targetManager._id.toString()
+        ? targetManager.employeeId || targetManager.name
         : viewerRoleLower === ROLES.ADMIN && (!targetSubjectId || targetSubjectId === "all_managers")
         ? "all_managers"
-        : viewer.userId,
+        : rawAnalytics?.managerInfo?.employeeId || rawAnalytics?.managerInfo?.name || "manager_performance",
       name: targetManager
         ? targetManager.name
         : viewerRoleLower === ROLES.ADMIN && (!targetSubjectId || targetSubjectId === "all_managers")
@@ -158,7 +164,7 @@ const buildAiContext = async ({
 
     subjectInfo = {
       type: "project",
-      targetId: projectId,
+      targetId: rawAnalytics?.projectInfo?.code || rawAnalytics?.projectInfo?.name || "project",
     };
   } else if (contextType === CONTEXT_TYPES.DEPARTMENT_REPORT) {
     rawAnalytics = await getDepartmentPerformanceAnalytics({
@@ -168,15 +174,16 @@ const buildAiContext = async ({
 
     subjectInfo = {
       type: "department",
-      targetId: rawAnalytics?.department?.id || targetSubjectId || "all_departments",
+      targetId: rawAnalytics?.department?.code || rawAnalytics?.department?.name || (rawAnalytics?.scopeMode === "ALL_DEPARTMENTS" ? "all_departments" : "department"),
       name: rawAnalytics?.department?.name || (rawAnalytics?.scopeMode === "ALL_DEPARTMENTS" ? "All Departments" : "Department"),
     };
   } else {
     throw new CustomError(`Unsupported context type "${contextType}".`, 400);
   }
 
-  // 3. Sanitize Payload (Recursively strip passwords, tokens, hashes, secrets, internal Mongoose fields)
-  const sanitizedData = sanitizePayload(rawAnalytics);
+  // 3. Sanitize Payload (Recursively strip passwords, tokens, hashes, secrets, internal Mongoose fields & map ObjectIds to business codes)
+  const entityIdMap = new Map();
+  const sanitizedData = sanitizePayload(rawAnalytics, entityIdMap);
 
   // 4. Construct Standardized AIContextDTO
   const contextDto = {
@@ -188,8 +195,10 @@ const buildAiContext = async ({
         role: viewer.role,
       },
       subject: subjectInfo,
+      entityIdMap,
     },
     sanitizedData,
+    entityIdMap,
   };
 
   return contextDto;
@@ -215,7 +224,10 @@ Generated At: ${contextDto.contextMetadata.generatedAt}
 
 === AUTHORIZED_DATA_PAYLOAD ===
 ${jsonPayload}
-=== END AUTHORIZED_DATA_PAYLOAD ===`;
+=== END AUTHORIZED_DATA_PAYLOAD ===
+
+=== USER REPORT PROMPT GUARDRAILS ===
+7. Generate a user-facing business report. Never expose internal database identifiers, MongoDB ObjectIds, storage paths, tokens, secrets, filesystem paths, or backend implementation details. Use only the provided human-readable business identifiers and business data.`;
 };
 
 module.exports = {

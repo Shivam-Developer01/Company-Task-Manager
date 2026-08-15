@@ -209,7 +209,8 @@ const reviewSubmission = async (req, res) => {
   // ===========================================================
 
   if (task.status !== TASK_STATUS.SUBMITTED) {
-    throw new CustomError("This task is not awaiting review", 400);
+    task.status = TASK_STATUS.SUBMITTED;
+    await task.save();
   }
 
   const latestSubmission = await Submission.findOne({
@@ -218,6 +219,16 @@ const reviewSubmission = async (req, res) => {
 
   if (!latestSubmission._id.equals(submission._id)) {
     throw new CustomError("Only the latest submission can be reviewed", 400);
+  }
+
+  if (action === "reject") {
+    const assignedUser = await User.findById(task.assignedTo);
+    if (assignedUser && !assignedUser.isActive) {
+      throw new CustomError(
+        "Cannot reject submission for a deactivated employee. Only approval is allowed.",
+        400,
+      );
+    }
   }
 
   // ===========================================================

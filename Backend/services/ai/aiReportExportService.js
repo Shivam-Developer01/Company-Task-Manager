@@ -1,5 +1,5 @@
 const { getReportConfig, REPORT_TYPES } = require("./aiReportConfig");
-const { validateContextAccess } = require("./aiContextPolicy");
+const { validateContextAccess, sanitizeOutputPayload } = require("./aiContextPolicy");
 const { validateAgainstSchema } = require("./aiResponseValidator");
 const { generateReportPdfBuffer } = require("./pdfReportGenerator");
 const { generateReportDocxBuffer } = require("./docxReportGenerator");
@@ -65,7 +65,8 @@ const exportAiReportDocument = async ({ viewer, format, reportPayload }) => {
     throw new CustomError("Report payload is missing AI analysis content.", 400);
   }
 
-  // 5. Build Sanitized Filename
+  // 5. Build Sanitized Filename & Sanitize Export Payload
+  const sanitizedPayload = sanitizeOutputPayload(reportPayload);
   const fileName = buildSanitizedFileName(reportType, reportData.subject, format.toLowerCase());
 
   // 6. Generate Document Binary Buffer (0 Gemini API requests, 0 DB mutations)
@@ -73,10 +74,10 @@ const exportAiReportDocument = async ({ viewer, format, reportPayload }) => {
   let contentType = "";
 
   if (format.toLowerCase() === "pdf") {
-    buffer = await generateReportPdfBuffer(reportPayload);
+    buffer = await generateReportPdfBuffer(sanitizedPayload);
     contentType = "application/pdf";
   } else {
-    buffer = await generateReportDocxBuffer(reportPayload);
+    buffer = await generateReportDocxBuffer(sanitizedPayload);
     contentType = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
   }
 

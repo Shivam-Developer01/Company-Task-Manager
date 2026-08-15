@@ -46,6 +46,7 @@ const REPORT_SOURCE_METRICS_CONFIG = {
     { label: "Overdue Tasks", path: "tasks.overdueTasks", format: "count" },
     { label: "Pending Reviews", path: "tasks.pendingReviews", format: "count" },
     { label: "High-Priority Overdue", path: "tasks.highPriorityOverdue", format: "count" },
+    { label: "Avg. Review Turnaround", path: "tasks.averageReviewTurnaroundDays", format: "days" },
   ],
 
   PROJECT_PERFORMANCE: [
@@ -305,10 +306,14 @@ function AiReports() {
         targetSubjectId:
           selectedReportType === "DEPARTMENT_PERFORMANCE"
             ? selectedDepartmentId
-            : selectedReportType === "EMPLOYEE_PERFORMANCE" && userRole !== "employee"
-            ? selectedEmployeeId
-            : (selectedReportType === "MANAGER_TEAM_PERFORMANCE" || selectedReportType === "MANAGER_PERFORMANCE") && userRole === "admin"
-            ? (selectedManagerId || null)
+            : selectedReportType === "EMPLOYEE_PERFORMANCE"
+            ? userRole === "employee"
+              ? user?._id || user?.id || null
+              : selectedEmployeeId
+            : (selectedReportType === "MANAGER_TEAM_PERFORMANCE" ||
+                selectedReportType === "MANAGER_PERFORMANCE") &&
+              userRole === "admin"
+            ? selectedManagerId || null
             : null,
         projectId:
           selectedReportType === "PROJECT_PERFORMANCE" ? selectedProjectId : null,
@@ -636,6 +641,114 @@ function AiReports() {
                     ))}
                   </tbody>
                 </table>
+              </div>
+            </div>
+          )}
+
+          {/* Month-over-Month Historical Performance Comparison */}
+          {(sourceMetrics?.historicalComparison || aiAnalysis?.historicalComparison) && (() => {
+            const hc = sourceMetrics?.historicalComparison || aiAnalysis?.historicalComparison;
+            const m = hc?.metrics;
+            if (!m) return null;
+
+            const renderTrendBadge = (direction, deltaStr) => {
+              const dirLower = (direction || "").toLowerCase();
+              let badgeClass = "ai-trend-badge stable";
+              let icon = "↔";
+
+              if (dirLower === "improving") {
+                badgeClass = "ai-trend-badge improving";
+                icon = "↑";
+              } else if (dirLower === "declining") {
+                badgeClass = "ai-trend-badge declining";
+                icon = "↓";
+              }
+
+              return (
+                <span className={badgeClass}>
+                  <span>{icon}</span> {deltaStr} {direction ? `(${direction})` : ""}
+                </span>
+              );
+            };
+
+            return (
+              <div className="ai-section-block">
+                <div className="ai-section-title" style={{ textAlign: "left" }}>
+                  Month-over-Month Historical Comparison (vs. {hc.previousPeriod})
+                </div>
+                <div className="ai-metrics-grid">
+                  {m.completionRate && (
+                    <div className="ai-metric-card">
+                      <div className="ai-metric-label">Completion Rate</div>
+                      <div className="ai-metric-value">{m.completionRate.current}%</div>
+                      <div className="ai-metric-subtext">
+                        <span>Prev: {m.completionRate.previous}%</span>
+                        {renderTrendBadge(
+                          m.completionRate.direction,
+                          `Delta: ${m.completionRate.deltaPercentagePoints > 0 ? `+${m.completionRate.deltaPercentagePoints}` : m.completionRate.deltaPercentagePoints}%`
+                        )}
+                      </div>
+                    </div>
+                  )}
+                  {m.overdueRate && (
+                    <div className="ai-metric-card">
+                      <div className="ai-metric-label">Overdue Rate</div>
+                      <div className="ai-metric-value">{m.overdueRate.current}%</div>
+                      <div className="ai-metric-subtext">
+                        <span>Prev: {m.overdueRate.previous}%</span>
+                        {renderTrendBadge(
+                          m.overdueRate.direction,
+                          `Delta: ${m.overdueRate.deltaPercentagePoints > 0 ? `+${m.overdueRate.deltaPercentagePoints}` : m.overdueRate.deltaPercentagePoints}%`
+                        )}
+                      </div>
+                    </div>
+                  )}
+                  {m.activeTasks && (
+                    <div className="ai-metric-card">
+                      <div className="ai-metric-label">Active Tasks</div>
+                      <div className="ai-metric-value">{m.activeTasks.current}</div>
+                      <div className="ai-metric-subtext">
+                        <span>Prev: {m.activeTasks.previous}</span>
+                        <span className="ai-trend-badge stable">
+                          Delta: {m.activeTasks.delta > 0 ? `+${m.activeTasks.delta}` : m.activeTasks.delta}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                  {m.rejectionRate && (
+                    <div className="ai-metric-card">
+                      <div className="ai-metric-label">Rejection Rate</div>
+                      <div className="ai-metric-value">{m.rejectionRate.current}%</div>
+                      <div className="ai-metric-subtext">
+                        <span>Prev: {m.rejectionRate.previous}%</span>
+                        {renderTrendBadge(
+                          m.rejectionRate.direction,
+                          `Delta: ${m.rejectionRate.deltaPercentagePoints > 0 ? `+${m.rejectionRate.deltaPercentagePoints}` : m.rejectionRate.deltaPercentagePoints}%`
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })()}
+
+          {/* Operational Insights & Breakdown (Department, Manager, Project) */}
+          {(Array.isArray(aiAnalysis.departmentInsights) || Array.isArray(aiAnalysis.managerInsights) || Array.isArray(aiAnalysis.projectInsights)) && (
+            <div className="ai-section-block">
+              <div className="ai-section-title">Operational Insights & Breakdown</div>
+              <div className="ai-list-box" style={{ borderLeft: "3px solid #6366f1" }}>
+                <ul>
+                  {[
+                    ...(aiAnalysis.departmentInsights || []),
+                    ...(aiAnalysis.managerInsights || []),
+                    ...(aiAnalysis.projectInsights || []),
+                  ].map((item, idx) => (
+                    <li key={idx}>
+                      {typeof item === "string" ? item.replace(/[\r\n]+/g, " ").trim() : item}
+                    </li>
+                  ))}
+                </ul>
               </div>
             </div>
           )}

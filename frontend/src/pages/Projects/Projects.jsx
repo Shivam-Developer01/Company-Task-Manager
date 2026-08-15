@@ -19,6 +19,7 @@ import ProjectModal from "../../components/ProjectModal/ProjectModal";
 import SideDrawer from "../../components/SideDrawer/SideDrawer";
 import ConfirmationModal from "../../components/ConfirmationModal/ConfirmationModal";
 import useDebounce from "../../hooks/useDebounce";
+import { ROLES } from "../../constants/roles";
 
 function Projects() {
   const navigate = useNavigate();
@@ -165,7 +166,11 @@ function Projects() {
       // Preserve existing managers
       const managerIds =
         selectedProject?.members
-          ?.filter((member) => member.role === "Manager")
+          ?.filter(
+            (member) =>
+              typeof member === "object" &&
+              member?.role?.toLowerCase() === ROLES.MANAGER,
+          )
           .map((member) => member._id) || [];
 
       const response = await projectService.updateProjectMembers(

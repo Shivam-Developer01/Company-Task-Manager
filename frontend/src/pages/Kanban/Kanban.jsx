@@ -12,6 +12,7 @@ import RejectTaskModal from "../../components/RejectTaskModal/RejectTaskModal";
 import ReviewSubmissionModal from "../../components/ReviewSubmissionModal/ReviewSubmissionModal";
 import ReassignModal from "../../components/ReassignModal/ReassignModal";
 import ConfirmationModal from "../../components/ConfirmationModal/ConfirmationModal";
+import SubmissionDrawer from "../../components/SubmissionDrawer/SubmissionDrawer";
 import formatDate from "../../utils/formatDate";
 import "./Kanban.css";
 
@@ -58,6 +59,8 @@ function Kanban() {
 
   const [selectedTask, setSelectedTask] = useState(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [selectedSubmission, setSelectedSubmission] = useState(null);
+  const [submissionDrawerOpen, setSubmissionDrawerOpen] = useState(false);
 
   // Drag and Drop States
   const [draggingTask, setDraggingTask] = useState(null);
@@ -161,20 +164,54 @@ function Kanban() {
       if (selectedPriority) params.priority = selectedPriority;
 
       let response;
+      let pendingSubmissionsRes;
+
       if (isEmployee) {
         response = await taskService.getMyTasks(params);
+        pendingSubmissionsRes = await submissionService.getMySubmissions({
+          status: "Pending Review",
+          limit: 100,
+        });
       } else {
         params.isArchived = false;
         response = await taskService.getTasks(params);
+        pendingSubmissionsRes = await submissionService.getSubmissions({
+          status: "Pending Review",
+          limit: 100,
+        });
       }
 
+      const pendingSubList =
+        pendingSubmissionsRes?.data ||
+        pendingSubmissionsRes?.submissions ||
+        pendingSubmissionsRes ||
+        [];
+      const pendingSubMap = new Map();
+      pendingSubList.forEach((sub) => {
+        const taskId =
+          sub.task?._id || (typeof sub.task === "string" ? sub.task : null);
+        if (taskId) {
+          pendingSubMap.set(taskId.toString(), sub);
+        }
+      });
+
       if (currentFetchId === fetchIdRef.current) {
-        setTasks(response.data || []);
+        const fetchedTasks = (response.data || []).map((t) => {
+          const sub = pendingSubMap.get(t._id.toString());
+          if (sub) {
+            return { ...t, pendingSubmission: sub };
+          }
+          return t;
+        });
+
+        setTasks(fetchedTasks);
       }
     } catch (err) {
       console.error("Failed to retrieve Kanban tasks:", err);
       if (currentFetchId === fetchIdRef.current) {
-        setError(err.response?.data?.message || "Failed to load Kanban tasks.");
+        setError(
+          err.response?.data?.message || "Failed to load Kanban tasks.",
+        );
       }
     } finally {
       if (currentFetchId === fetchIdRef.current) {
@@ -315,6 +352,12 @@ function Kanban() {
       }
       // 6. Manager/Admin: Submitted -> In Progress (opens ReviewSubmissionModal for rejection)
       else if (task.status === "Submitted" && targetStatus === "In Progress") {
+        if (task.assignedTo?.isActive === false) {
+          toast.error(
+            "Cannot reject submission for a deactivated employee. Only approval is allowed.",
+          );
+          return;
+        }
         setReviewModalState({
           isOpen: true,
           type: "reject",
@@ -433,52 +476,127 @@ function Kanban() {
 
   // Review Submission Modal Handler (Approve / Reject)
   const handleReviewSubmission = async (feedback) => {
-    if (!reviewModalState.task) return;
-    const { task, type } = reviewModalState;
+    if (!reviewModalState.task && !reviewModalState.submission) return;
+    const { task, submission, type } = reviewModalState;
 
     try {
       setReviewModalState((prev) => ({ ...prev, loading: true }));
 
-      // Fetch pending review submission for this task
-      let pendingSubmission = null;
-      try {
-        const subRes = isEmployee
-          ? await submissionService.getMySubmissions({ task: task._id, status: "Pending Review" })
-          : await submissionService.getSubmissions({ task: task._id, status: "Pending Review" });
-        const subList = subRes.data || subRes.submissions || subRes || [];
-        pendingSubmission = subList[0];
-      } catch (err) {
-        console.error("Error fetching submission for task:", err);
+      let submissionId = submission?._id;
+      if (!submissionId && task) {
+        let pendingSubmission = null;
+        try {
+          const subRes = isEmployee
+            ? await submissionService.getMySubmissions({
+                task: task._id,
+                status: "Pending Review",
+              })
+            : await submissionService.getSubmissions({
+                task: task._id,
+                status: "Pending Review",
+              });
+          const subList = subRes.data || subRes.submissions || subRes || [];
+          pendingSubmission = subList[0];
+        } catch (err) {
+          console.error("Error fetching submission for task:", err);
+        }
+        submissionId = pendingSubmission?._id;
       }
 
-      if (!pendingSubmission) {
-        toast.error("No pending submission found to review for this task.");
-        setReviewModalState({ isOpen: false, type: null, task: null, loading: false });
+      if (!submissionId) {
+        toast.error("No pending submission found to review.");
+        setReviewModalState({
+          isOpen: false,
+          type: null,
+          task: null,
+          submission: null,
+          loading: false,
+        });
         fetchKanbanTasks();
         return;
       }
 
       const action = type === "approve" ? "approve" : "reject";
-      await submissionService.reviewSubmission(pendingSubmission._id, action, feedback);
+      await submissionService.reviewSubmission(
+        submissionId,
+        action,
+        feedback,
+      );
 
       if (action === "approve") {
         toast.success("Task submission approved and task closed.");
-        setTasks((prev) =>
-          prev.map((t) => (t._id === task._id ? { ...t, status: "Closed" } : t)),
-        );
+        if (task) {
+          setTasks((prev) =>
+            prev.map((t) =>
+              t._id === task._id ? { ...t, status: "Closed" } : t,
+            ),
+          );
+        }
       } else {
-        toast.success("Task submission rejected and returned to In Progress.");
-        setTasks((prev) =>
-          prev.map((t) => (t._id === task._id ? { ...t, status: "In Progress" } : t)),
+        toast.success(
+          "Task submission rejected and returned to In Progress.",
         );
+        if (task) {
+          setTasks((prev) =>
+            prev.map((t) =>
+              t._id === task._id ? { ...t, status: "In Progress" } : t,
+            ),
+          );
+        }
       }
 
-      setReviewModalState({ isOpen: false, type: null, task: null, loading: false });
+      setReviewModalState({
+        isOpen: false,
+        type: null,
+        task: null,
+        submission: null,
+        loading: false,
+      });
+      fetchKanbanTasks();
     } catch (err) {
-      toast.error(err.response?.data?.message || "Failed to review submission.");
+      toast.error(
+        err.response?.data?.message || "Failed to review submission.",
+      );
       setReviewModalState((prev) => ({ ...prev, loading: false }));
       fetchKanbanTasks();
     }
+  };
+
+  const handleOpenPendingSubmission = async (task) => {
+    try {
+      if (!task.pendingSubmission) return;
+      const fullSubRes = await submissionService.getSubmission(
+        task.pendingSubmission._id,
+      );
+      setSelectedSubmission(fullSubRes.data || fullSubRes);
+      setSubmissionDrawerOpen(true);
+    } catch (err) {
+      console.error("Failed to fetch submission details:", err);
+      setSelectedSubmission(task.pendingSubmission);
+      setSubmissionDrawerOpen(true);
+    }
+  };
+
+  const handleApproveFromDrawer = (submission) => {
+    setSubmissionDrawerOpen(false);
+    setReviewModalState({
+      isOpen: true,
+      type: "approve",
+      task: submission.task,
+      submission: submission,
+      loading: false,
+    });
+  };
+
+  const handleRejectFromDrawer = (submission) => {
+    setSubmissionDrawerOpen(false);
+    setReviewModalState({
+      isOpen: true,
+      type: "reject",
+      task: submission.task,
+      submission: submission,
+      loading: false,
+    });
   };
 
   // Reassign Task Modal Handler
@@ -523,9 +641,22 @@ function Kanban() {
   };
 
   const renderColumn = (column) => {
-    const columnTasks = tasks.filter((t) =>
-      column.keys ? column.keys.includes(t.status) : t.status === column.key,
-    );
+    let columnTasks = [];
+    if (column.key === "Submitted") {
+      columnTasks = tasks.filter((t) => {
+        const matchesStatus = column.keys
+          ? column.keys.includes(t.status)
+          : t.status === column.key;
+        const hasPendingSub =
+          t.pendingSubmission &&
+          t.pendingSubmission.status === "Pending Review";
+        return matchesStatus && hasPendingSub;
+      });
+    } else {
+      columnTasks = tasks.filter((t) =>
+        column.keys ? column.keys.includes(t.status) : t.status === column.key,
+      );
+    }
 
     const isValidDrop =
       draggingTask && isTransitionValid(draggingTask.status, column.key);
@@ -554,7 +685,7 @@ function Kanban() {
           {columnTasks.length === 0 ? (
             <div className="kanban-empty-column">No tasks</div>
           ) : (
-            columnTasks.map((task) => {
+            columnTasks.map((task, idx) => {
               const draggable = isTaskDraggable(task);
               const isUpdating = updatingTaskId === task._id;
               const isDragging = draggingTask?._id === task._id;
@@ -564,14 +695,18 @@ function Kanban() {
                   className={`kanban-card ${draggable ? "is-draggable" : ""} ${
                     isDragging ? "is-dragging" : ""
                   } ${isUpdating ? "is-updating" : ""}`}
-                  key={task._id}
+                  key={task._id ? `${column.key}-${task._id}` : `${column.key}-${idx}`}
                   draggable={draggable && !isUpdating}
                   onDragStart={(e) => handleDragStart(e, task)}
                   onDragEnd={() => setDraggingTask(null)}
                   onClick={() => {
                     if (draggingTask || isUpdating) return;
-                    setSelectedTask(task);
-                    setIsDrawerOpen(true);
+                    if (column.key === "Submitted" && task.pendingSubmission) {
+                      handleOpenPendingSubmission(task);
+                    } else {
+                      setSelectedTask(task);
+                      setIsDrawerOpen(true);
+                    }
                   }}
                 >
                   <div className="kanban-card-header">
@@ -718,8 +853,8 @@ function Kanban() {
             >
               <option value="">All Projects</option>
               <option value="NO_PROJECT">Independent Tasks</option>
-              {projects.map((p) => (
-                <option key={p._id} value={p._id}>
+              {projects.map((p, idx) => (
+                <option key={p._id ? `proj-${p._id}` : `proj-${idx}`} value={p._id}>
                   {p.name}
                 </option>
               ))}
@@ -737,8 +872,8 @@ function Kanban() {
                 onChange={(e) => setSelectedEmployee(e.target.value)}
               >
                 <option value="">All Employees</option>
-                {employees.map((emp) => (
-                  <option key={emp._id} value={emp._id}>
+                {employees.map((emp, idx) => (
+                  <option key={emp._id ? `emp-${emp._id}` : `emp-${idx}`} value={emp._id}>
                     {emp.name}
                   </option>
                 ))}
@@ -880,6 +1015,17 @@ function Kanban() {
         loading={archiveModalState.loading}
         onConfirm={handleConfirmArchive}
         onClose={() => setArchiveModalState({ isOpen: false, task: null, loading: false })}
+      />
+
+      <SubmissionDrawer
+        isOpen={submissionDrawerOpen}
+        submission={selectedSubmission}
+        onClose={() => {
+          setSubmissionDrawerOpen(false);
+          setSelectedSubmission(null);
+        }}
+        onApprove={handleApproveFromDrawer}
+        onReject={handleRejectFromDrawer}
       />
     </div>
   );

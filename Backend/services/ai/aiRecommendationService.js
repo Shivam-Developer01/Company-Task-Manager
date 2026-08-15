@@ -2,7 +2,7 @@ const {
   RECOMMENDATION_TYPES,
   getRecommendationConfig,
 } = require("./aiRecommendationConfig");
-const { validateContextAccess } = require("./aiContextPolicy");
+const { validateContextAccess, sanitizeOutputPayload } = require("./aiContextPolicy");
 const { buildAiContext } = require("./aiContextBuilder");
 const { generateStructuredAiResponse } = require("./aiResponseService");
 const { getCandidateEvidenceForTask } = require("../analytics/candidateAnalytics");
@@ -102,6 +102,47 @@ const generateAiRecommendation = async ({
       },
       sanitizedData: evidenceMetrics,
     };
+    // Short-circuit LLM invocation if 0 candidates are eligible
+    if (evidenceMetrics.candidateCount === 0 || !Array.isArray(evidenceMetrics.candidates) || evidenceMetrics.candidates.length === 0) {
+      const emptyRecommendationPayload = {
+        success: true,
+        recommendation: {
+          recommendationType: config.recommendationType,
+          generatedAt: new Date().toISOString(),
+          viewer: {
+            userId: viewer.userId,
+            role: viewer.role,
+          },
+          target: {
+            targetType,
+            targetId,
+          },
+          evidenceMetrics,
+          aiRecommendation: {
+            recommendationType: "TASK_ASSIGNMENT",
+            targetType: "task",
+            targetId,
+            recommendedEmployeeId: null,
+            recommendedEmployeeName: null,
+            recommendation: "No eligible team candidates are currently available for this task.",
+            rationale: "There are currently 0 active project members or team employees available for task reassignment under existing project membership rules.",
+            evidence: ["0 eligible candidates in scope"],
+            confidence: "low",
+            limitations: ["No eligible active candidates available in scope"],
+            insufficientEvidence: true,
+            noRecommendation: true,
+          },
+        },
+        metadata: {
+          schemaName: config.schema.name,
+          schemaVersion: config.schema.version,
+          model: "deterministic_fallback",
+          usage: null,
+          durationMs: 0,
+        },
+      };
+      return sanitizeOutputPayload(emptyRecommendationPayload, contextDto?.entityIdMap);
+    }
   } else {
     // Fallback for general recommendation contexts
     contextDto = await buildAiContext({
@@ -147,9 +188,8 @@ const generateAiRecommendation = async ({
     }
   }
 
-  // 6. Return Normalized Recommendation Payload
-  // AI output remains strictly ADVISORY for human decision-maker approval
-  return {
+  // 6. Return Normalized Recommendation Payload (Output Sanitized)
+  const recommendationPayload = {
     success: true,
     recommendation: {
       recommendationType: config.recommendationType,
@@ -167,6 +207,8 @@ const generateAiRecommendation = async ({
     },
     metadata: aiResult.metadata,
   };
+
+  return sanitizeOutputPayload(recommendationPayload, contextDto?.entityIdMap);
 };
 
 module.exports = {

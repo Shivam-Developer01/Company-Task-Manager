@@ -2,6 +2,7 @@ const User = require("../../models/User");
 const Department = require("../../models/Department");
 const Designation = require("../../models/Designation");
 const Task = require("../../models/Task");
+const Submission = require("../../models/Submission");
 const mongoose = require("mongoose");
 const createActivity = require("../../utils/createActivity");
 const createNotification = require("../../utils/createNotification");
@@ -13,6 +14,7 @@ const bcrypt = require("bcryptjs");
 const {
   ROLES,
   TASK_STATUS,
+  SUBMISSION_STATUS,
   NOTIFICATION_TYPE,
 } = require("../../constants/constants");
 
@@ -325,7 +327,6 @@ const getUserActiveTasksCount = async (req, res) => {
     TASK_STATUS.ASSIGNED,
     TASK_STATUS.ACCEPTED,
     TASK_STATUS.IN_PROGRESS,
-    TASK_STATUS.SUBMITTED,
     TASK_STATUS.TASK_REJECTED,
   ];
 
@@ -364,16 +365,21 @@ const toggleUserStatus = async (req, res) => {
   let withdrawnTasksCount = 0;
 
   if (willDeactivate) {
+    const pendingSubTaskIds = await Submission.distinct("task", {
+      submittedBy: user._id,
+      status: SUBMISSION_STATUS.PENDING_REVIEW,
+    });
+
     const activeStatuses = [
       TASK_STATUS.ASSIGNED,
       TASK_STATUS.ACCEPTED,
       TASK_STATUS.IN_PROGRESS,
-      TASK_STATUS.SUBMITTED,
       TASK_STATUS.TASK_REJECTED,
     ];
 
     const activeTasks = await Task.find({
       assignedTo: user._id,
+      _id: { $nin: pendingSubTaskIds },
       status: { $in: activeStatuses },
       isArchived: { $ne: true },
     });

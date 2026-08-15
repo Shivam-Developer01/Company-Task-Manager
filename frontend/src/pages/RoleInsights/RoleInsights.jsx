@@ -73,6 +73,9 @@ function RoleInsights() {
   const [employeeOptions, setEmployeeOptions] = useState([]);
   const [loadingEmployeeOptions, setLoadingEmployeeOptions] = useState(false);
 
+  // Employee Strength Table Filter State (Manager Perspective)
+  const [selectedStrengthEmployeeId, setSelectedStrengthEmployeeId] = useState("ALL");
+
   // Safe switching handler with automatic role authorization fallback
   const handlePerspectiveChange = (newPerspective) => {
     if (allowedPerspectives.includes(newPerspective)) {
@@ -1313,92 +1316,156 @@ function RoleInsights() {
             )}
 
             {/* 5. Employee Strength & Work-Type Intelligence */}
-            {managerMetrics && !loadingManagerMetrics && managerMetrics.employeeStrengths && (
-              <div className="insight-section" style={{ marginTop: "16px" }}>
-                <div className="section-title">
-                  <h3><FiShield style={{ color: "#8b5cf6" }} /> Employee Strength & Work-Type Intelligence</h3>
-                  <span className="badge-perspective manager">Execution Evidence</span>
-                </div>
+            {managerMetrics && !loadingManagerMetrics && managerMetrics.employeeStrengths && (() => {
+              const allStrengthEmployees = managerMetrics.employeeStrengths.employeeStrengthsList || [];
+              const filteredStrengthEmployees = selectedStrengthEmployeeId === "ALL"
+                ? allStrengthEmployees
+                : allStrengthEmployees.filter((emp) => {
+                    const idStr = (emp.employeeId || emp.employeeCode || emp.id || "").toString();
+                    return idStr === selectedStrengthEmployeeId;
+                  });
 
-                {/* Transparent Schema Limitation Notice */}
-                <div className="perspective-banner" style={{ background: "#f8fafc", borderLeft: "4px solid #8b5cf6", marginBottom: "16px" }}>
-                  <div className="banner-icon" style={{ color: "#8b5cf6" }}>
-                    <FiShield />
-                  </div>
-                  <div className="banner-text">
-                    <h4 style={{ color: "#1e293b", margin: "0 0 4px 0" }}>
-                      Structured Priority & Domain Execution Evidence
-                    </h4>
-                    <p style={{ margin: 0, color: "#64748b", fontSize: "12.5px" }}>
-                      {managerMetrics.employeeStrengths.limitationNotice}
-                    </p>
-                  </div>
-                </div>
+              const hasRowsToRender = filteredStrengthEmployees.some(
+                (emp) => emp.priorityBreakdown && emp.priorityBreakdown.length > 0
+              );
 
-                {/* Employee Strength Breakdown Table */}
-                {managerMetrics.employeeStrengths.employeeStrengthsList &&
-                managerMetrics.employeeStrengths.employeeStrengthsList.length > 0 ? (
-                  <div className="table-responsive-container">
-                    <table className="dept-performance-table project-table">
-                      <thead>
-                        <tr>
-                          <th>Employee</th>
-                          <th>Priority Tier</th>
-                          <th>Total Tasks</th>
-                          <th>Completed</th>
-                          <th>Overdue</th>
-                          <th>Completion Rate</th>
-                          <th>Evidence Level</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {managerMetrics.employeeStrengths.employeeStrengthsList.flatMap((emp) =>
-                          emp.priorityBreakdown.map((item, idx) => (
-                            <tr key={`${emp.employeeId}-${item.priorityTier}-${idx}`}>
-                              <td>
-                                <div className="dept-name-cell">
-                                  <strong>{emp.employeeName}</strong>
-                                  <span className="dept-code-pill">{emp.employeeCode}</span>
-                                </div>
-                              </td>
-                              <td>
-                                <span className={`status-chip-indicator ${item.priorityTier === "High" || item.priorityTier === "Critical" ? "danger" : "neutral"}`}>
-                                  {item.priorityTier} Priority
-                                </span>
-                              </td>
-                              <td>{item.totalTasks}</td>
-                              <td>{item.completedTasks}</td>
-                              <td style={{ color: item.overdueTasks > 0 ? "#ef4444" : "inherit" }}>
-                                {item.overdueTasks}
-                              </td>
-                              <td style={{ fontWeight: "700", color: "#10b981" }}>
-                                {item.completionRate}%
-                              </td>
-                              <td>
-                                <span
-                                  className={`status-chip-indicator ${
-                                    item.evidenceLevel === "Strong Execution Indicator"
-                                      ? "success"
-                                      : "neutral"
-                                  }`}
-                                >
-                                  {item.evidenceLevel}
-                                </span>
-                              </td>
-                            </tr>
-                          ))
-                        )}
-                      </tbody>
-                    </table>
+              return (
+                <div className="insight-section" style={{ marginTop: "16px" }}>
+                  <div className="section-title">
+                    <h3><FiShield style={{ color: "#8b5cf6" }} /> Employee Strength & Work-Type Intelligence</h3>
+                    <span className="badge-perspective manager">Execution Evidence</span>
                   </div>
-                ) : (
-                  <div className="foundation-card">
-                    <h4>No Execution Strength Evidence Available</h4>
-                    <p>No task execution history available across accessible priority tiers.</p>
+
+                  {/* Transparent Schema Limitation Notice */}
+                  <div className="perspective-banner" style={{ background: "#f8fafc", borderLeft: "4px solid #8b5cf6", marginBottom: "16px" }}>
+                    <div className="banner-icon" style={{ color: "#8b5cf6" }}>
+                      <FiShield />
+                    </div>
+                    <div className="banner-text">
+                      <h4 style={{ color: "#1e293b", margin: "0 0 4px 0" }}>
+                        Structured Priority & Domain Execution Evidence
+                      </h4>
+                      <p style={{ margin: 0, color: "#64748b", fontSize: "12.5px" }}>
+                        {managerMetrics.employeeStrengths.limitationNotice}
+                      </p>
+                    </div>
                   </div>
-                )}
-              </div>
-            )}
+
+                  {/* Employee Filter Dropdown */}
+                  {allStrengthEmployees.length > 0 && (
+                    <div
+                      className="filter-bar"
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "10px",
+                        marginBottom: "14px",
+                        flexWrap: "wrap",
+                      }}
+                    >
+                      <label
+                        htmlFor="strength-employee-filter"
+                        style={{ fontSize: "13px", fontWeight: "600", color: "#475569" }}
+                      >
+                        Employee:
+                      </label>
+                      <select
+                        id="strength-employee-filter"
+                        className="perspective-select"
+                        value={selectedStrengthEmployeeId}
+                        onChange={(e) => setSelectedStrengthEmployeeId(e.target.value)}
+                        style={{
+                          padding: "6px 12px",
+                          fontSize: "13px",
+                          borderRadius: "6px",
+                          border: "1px solid #cbd5e1",
+                          backgroundColor: "#ffffff",
+                          color: "#1e293b",
+                          cursor: "pointer",
+                          maxWidth: "100%",
+                        }}
+                      >
+                        <option value="ALL">All Employees</option>
+                        {allStrengthEmployees.map((emp) => {
+                          const optionVal = (emp.employeeId || emp.employeeCode || emp.id || "").toString();
+                          return (
+                            <option key={optionVal} value={optionVal}>
+                              {emp.employeeName} {emp.employeeCode ? `(${emp.employeeCode})` : ""}
+                            </option>
+                          );
+                        })}
+                      </select>
+                    </div>
+                  )}
+
+                  {/* Employee Strength Breakdown Table */}
+                  {hasRowsToRender ? (
+                    <div className="table-responsive-container">
+                      <table className="dept-performance-table project-table">
+                        <thead>
+                          <tr>
+                            <th>Employee</th>
+                            <th>Priority Tier</th>
+                            <th>Total Tasks</th>
+                            <th>Completed</th>
+                            <th>Overdue</th>
+                            <th>Completion Rate</th>
+                            <th>Evidence Level</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {filteredStrengthEmployees.flatMap((emp) =>
+                            (emp.priorityBreakdown || []).map((item, idx) => (
+                              <tr key={`${emp.employeeId || emp.employeeCode}-${item.priorityTier}-${idx}`}>
+                                <td>
+                                  <div className="dept-name-cell">
+                                    <strong>{emp.employeeName}</strong>
+                                    <span className="dept-code-pill">{emp.employeeCode}</span>
+                                  </div>
+                                </td>
+                                <td>
+                                  <span className={`status-chip-indicator ${item.priorityTier === "High" || item.priorityTier === "Critical" ? "danger" : "neutral"}`}>
+                                    {item.priorityTier} Priority
+                                  </span>
+                                </td>
+                                <td>{item.totalTasks}</td>
+                                <td>{item.completedTasks}</td>
+                                <td style={{ color: item.overdueTasks > 0 ? "#ef4444" : "inherit" }}>
+                                  {item.overdueTasks}
+                                </td>
+                                <td style={{ fontWeight: "700", color: "#10b981" }}>
+                                  {item.completionRate}%
+                                </td>
+                                <td>
+                                  <span
+                                    className={`status-chip-indicator ${
+                                      item.evidenceLevel === "Strong Execution Indicator"
+                                        ? "success"
+                                        : "neutral"
+                                    }`}
+                                  >
+                                    {item.evidenceLevel}
+                                  </span>
+                                </td>
+                              </tr>
+                            ))
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (
+                    <div className="foundation-card">
+                      <h4>No Execution Strength Evidence Available</h4>
+                      <p>
+                        {selectedStrengthEmployeeId !== "ALL"
+                          ? "No records available for this employee."
+                          : "No task execution history available across accessible priority tiers."}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
 
             {/* 6. Assignment Intelligence */}
             {managerMetrics && !loadingManagerMetrics && managerMetrics.assignmentIntelligence && (

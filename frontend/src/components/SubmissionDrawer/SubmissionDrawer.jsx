@@ -286,13 +286,16 @@ function SubmissionDrawer({
 
           {submission.status === "Pending Review" && (
             <div className="task-drawer-actions">
-              <button
-                className="danger-d-btn"
-                disabled={loading}
-                onClick={() => onReject(submission)}
-              >
-                {loading ? "Please wait..." : "Reject"}
-              </button>
+              {submission.task?.assignedTo?.isActive !== false &&
+                submission.submittedBy?.isActive !== false && (
+                  <button
+                    className="danger-d-btn"
+                    disabled={loading}
+                    onClick={() => onReject(submission)}
+                  >
+                    {loading ? "Please wait..." : "Reject"}
+                  </button>
+                )}
 
               <button
                 className="save-d-btn"

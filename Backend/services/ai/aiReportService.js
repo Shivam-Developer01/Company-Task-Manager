@@ -1,5 +1,5 @@
 const { getReportConfig } = require("./aiReportConfig");
-const { validateContextAccess } = require("./aiContextPolicy");
+const { validateContextAccess, sanitizeOutputPayload } = require("./aiContextPolicy");
 const { buildAiContext } = require("./aiContextBuilder");
 const { generateStructuredAiResponse } = require("./aiResponseService");
 const CustomError = require("../../errors/CustomError");
@@ -63,9 +63,8 @@ const generateAiReport = async ({
     temperature: 0.2,
   });
 
-  // 6. Return Normalized Application Report DTO
-  // Explicitly separates Authoritative Source Metrics from Non-Authoritative AI Analysis
-  return {
+  // 6. Return Normalized Application Report DTO (Output Sanitized)
+  const reportPayload = {
     success: true,
     report: {
       reportType: config.reportType,
@@ -80,6 +79,8 @@ const generateAiReport = async ({
     },
     metadata: aiResult.metadata,
   };
+
+  return sanitizeOutputPayload(reportPayload, contextDto?.entityIdMap);
 };
 
 module.exports = {

@@ -113,10 +113,34 @@ const getCompanyAnalytics = async (req, res) => {
   });
 };
 
+/* ===========================================================
+   POST /api/analytics/department-snapshot
+   Admin only — Trigger explicit department snapshot generation.
+   =========================================================== */
+
+const {
+  generateAllActiveDepartmentSnapshots,
+} = require("../services/analytics/departmentSnapshotService");
+
+const triggerDepartmentSnapshot = async (req, res) => {
+  const { period } = req.body || {};
+  const result = await generateAllActiveDepartmentSnapshots({
+    period: period || null,
+    viewer: req.user,
+  });
+
+  res.status(200).json({
+    success: true,
+    message: `Department snapshots generated successfully for period ${result.period}`,
+    data: result,
+  });
+};
+
 module.exports = {
   getMyEmployeeMetrics,
   getEmployeeMetricsById,
   getTeamMetrics,
   getProjectMetricsById,
   getCompanyAnalytics,
+  triggerDepartmentSnapshot,
 };

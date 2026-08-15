@@ -885,6 +885,7 @@ const getCompanyMetrics = async (projectFilter = {}) => {
     highPriorityOverdueCount,
     rejectedTaskCount,
     pendingReviewCount,
+    submissionTurnaroundAgg,
     departmentMetrics,
     managerMetrics,
     projectHealthMetrics,
@@ -938,6 +939,18 @@ const getCompanyMetrics = async (projectFilter = {}) => {
 
     Submission.countDocuments({ status: "Pending Review" }),
 
+    Submission.aggregate([
+      { $match: { reviewedAt: { $ne: null } } },
+      {
+        $project: {
+          days: {
+            $divide: [{ $subtract: ["$reviewedAt", "$createdAt"] }, 86400000],
+          },
+        },
+      },
+      { $group: { _id: null, avg: { $avg: "$days" } } },
+    ]),
+
     getDepartmentPerformanceMetrics(),
     getManagerPerformanceMetrics(),
     getProjectHealthMetrics(),
@@ -974,6 +987,11 @@ const getCompanyMetrics = async (projectFilter = {}) => {
       ? Number(((overdueTaskCount / overdueDenominator) * 100).toFixed(2))
       : 0;
 
+  const averageReviewTurnaroundDays =
+    submissionTurnaroundAgg.length > 0 && submissionTurnaroundAgg[0].avg !== null
+      ? Number(submissionTurnaroundAgg[0].avg.toFixed(2))
+      : null;
+
   const companyTaskMetrics = {
     totalTasks,
     activeTasks,
@@ -985,6 +1003,7 @@ const getCompanyMetrics = async (projectFilter = {}) => {
     rejectedTasks: rejectedTaskCount,
     taskCompletionRate,
     overdueRate,
+    averageReviewTurnaroundDays,
     taskStatusDistribution,
   };
 
