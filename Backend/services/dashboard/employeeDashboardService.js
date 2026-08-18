@@ -53,17 +53,32 @@ const getEmployeeAttentionItems = async (userId, taskProjectFilter, overdueCount
     });
   }
 
-  // Rejected submissions requiring revision
-  const rejectedSubmissions = await Submission.countDocuments({
-    submittedBy: userId,
-    status: SUBMISSION_STATUS.REJECTED,
-  });
+  // Rejected submissions requiring revision (only tasks whose LATEST submission is REJECTED)
+  const userSubmissions = await Submission.find({ submittedBy: userId })
+    .select("task status createdAt")
+    .sort({ createdAt: -1 })
+    .lean();
 
-  if (rejectedSubmissions > 0) {
+  const processedTasks = new Set();
+  let pendingResubmissionCount = 0;
+
+  for (const sub of userSubmissions) {
+    if (sub.task) {
+      const taskIdStr = sub.task.toString();
+      if (!processedTasks.has(taskIdStr)) {
+        processedTasks.add(taskIdStr);
+        if (sub.status === SUBMISSION_STATUS.REJECTED) {
+          pendingResubmissionCount++;
+        }
+      }
+    }
+  }
+
+  if (pendingResubmissionCount > 0) {
     items.push({
       type: "info",
       title: "Submission Feedback",
-      message: `You have ${rejectedSubmissions} rejected submission(s) requiring review and resubmission.`,
+      message: `You have ${pendingResubmissionCount} rejected submission(s) requiring review and resubmission.`,
     });
   }
 

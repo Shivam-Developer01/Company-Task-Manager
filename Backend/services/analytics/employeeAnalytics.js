@@ -669,16 +669,19 @@ const getEmployeeInsights = (
   }
 
   // 2. Rejected Submissions
-  if (
-    myPerformance &&
-    myPerformance.submissionPerformance &&
-    myPerformance.submissionPerformance.rejectedCount > 0
-  ) {
+  const activeRejectedItems =
+    actionCenter && actionCenter.needsAttention
+      ? actionCenter.needsAttention.filter(
+          (item) => item.type === "rejected_submission",
+        )
+      : [];
+
+  if (activeRejectedItems.length > 0) {
     areasRequiringAttention.push({
       id: "att-rejected",
       category: "Submissions",
       title: "Submissions Requiring Revision",
-      evidence: `${myPerformance.submissionPerformance.rejectedCount} submission(s) were returned by reviewer for revision.`,
+      evidence: `${activeRejectedItems.length} submission(s) were returned by reviewer for revision.`,
       severity: "High",
     });
   }
@@ -1071,35 +1074,36 @@ const getEmployeeActionCenter = async (employeeId, projectScope = null) => {
   // --- Category 1: Needs Attention (Max 5) ---
 
   // 1. Rejected Submissions requiring employee action
-  const rejectedSubmissions = submissions.filter(
-    (sub) => sub.status === SUBMISSION_STATUS.REJECTED && sub.task
-  );
-
+  // Evaluate submissions ordered by createdAt: -1 (newest first).
+  // The first time a task is encountered, `sub` is its LATEST submission.
+  // A task requires resubmission IF AND ONLY IF its latest submission is REJECTED.
   const processedTaskIds = new Set();
-  rejectedSubmissions.forEach((sub) => {
+  submissions.forEach((sub) => {
     if (needsAttention.length >= 5) return;
     const taskDoc = sub.task;
     if (taskDoc && !processedTaskIds.has(taskDoc._id.toString())) {
       processedTaskIds.add(taskDoc._id.toString());
-      const { projName, phaseName } = getContextInfo(taskDoc);
-      needsAttention.push({
-        id: `na-rejected-${sub._id}`,
-        taskId: taskDoc._id,
-        submissionId: sub._id,
-        category: "Submission Feedback",
-        severity: "High",
-        title: taskDoc.title,
-        evidence: sub.managerFeedback
-          ? `Submission rejected by reviewer. Feedback: "${sub.managerFeedback}"`
-          : "Your submission was rejected and requires further work.",
-        status: taskDoc.status || TASK_STATUS.IN_PROGRESS,
-        priority: taskDoc.priority || "Medium",
-        dueDate: taskDoc.dueDate,
-        projectName: projName,
-        phaseName: phaseName,
-        actionRequired: "Revision & Resubmission Required",
-        type: "rejected_submission",
-      });
+      if (sub.status === SUBMISSION_STATUS.REJECTED) {
+        const { projName, phaseName } = getContextInfo(taskDoc);
+        needsAttention.push({
+          id: `na-rejected-${sub._id}`,
+          taskId: taskDoc._id,
+          submissionId: sub._id,
+          category: "Submission Feedback",
+          severity: "High",
+          title: taskDoc.title,
+          evidence: sub.managerFeedback
+            ? `Submission rejected by reviewer. Feedback: "${sub.managerFeedback}"`
+            : "Your submission was rejected and requires further work.",
+          status: taskDoc.status || TASK_STATUS.IN_PROGRESS,
+          priority: taskDoc.priority || "Medium",
+          dueDate: taskDoc.dueDate,
+          projectName: projName,
+          phaseName: phaseName,
+          actionRequired: "Revision & Resubmission Required",
+          type: "rejected_submission",
+        });
+      }
     }
   });
 
