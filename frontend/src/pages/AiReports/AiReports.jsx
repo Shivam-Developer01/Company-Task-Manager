@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { FiCpu, FiFileText, FiRefreshCw, FiAlertCircle } from "react-icons/fi";
+import { FiCpu, FiFileText, FiAlertCircle } from "react-icons/fi";
 import aiService from "../../services/aiService";
 import userService from "../../services/userService";
 import projectService from "../../services/projectService";
@@ -233,7 +233,7 @@ function AiReports() {
     setLoadingEmployees(true);
 
     userService
-      .getUsers()
+      .getUserOptions()
       .then((res) => {
         if (!isMounted) return;
         const list = res?.data || res || [];

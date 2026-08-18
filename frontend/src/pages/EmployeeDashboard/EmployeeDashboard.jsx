@@ -2,20 +2,6 @@ import "./EmployeeDashboard.css";
 
 import { useEffect, useState } from "react";
 
-import {
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
-  Tooltip,
-  Legend,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-} from "recharts";
-
 import dashboardService from "../../services/dashboardService";
 
 import Loader from "../../components/Loader/Loader";
@@ -124,8 +110,6 @@ function EmployeeDashboard() {
       value: statistics.closed || 0,
     },
   ];
-
-  const COLORS = ["#3b82f6", "#10b981", "#f59e0b", "#8b5cf6", "#ef4444"];
 
   return (
     <div className="dashboard">
